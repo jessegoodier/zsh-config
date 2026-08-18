@@ -8,6 +8,8 @@ bindkey '^e' end-of-line
 bindkey '^w' backward-kill-word
 bindkey '^u' backward-kill-line
 bindkey '^_' undo
+# Forward Delete sends CSI 3~; without this bind the trailing ~ is inserted.
+bindkey '^[[3~' delete-char
 
 # History search
 bindkey '^[[A' history-beginning-search-backward

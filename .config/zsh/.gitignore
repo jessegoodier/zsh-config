@@ -1,2 +1,6 @@
+# Cloned on first use by plugin-path; do not vendor the clones.
 plugins/*
+!plugins/oh-my-zsh-plugins/
+!plugins/oh-my-zsh-plugins/**
+
 *.zwc
