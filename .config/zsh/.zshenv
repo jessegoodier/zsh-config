@@ -34,9 +34,18 @@ export GTK_CURSOR_THEME=$XCURSOR_THEME
 
 # path setup
 typeset -gU path
-path=(
-	$XDG_BIN_HOME
-	$CARGO_BIN_HOME
-	$PNPM_HOME
-	$path
-)
+path_add() {
+	local d
+	local -a dirs
+	for d in "$@"; do
+		[[ -d $d ]] && dirs+=($d)
+	done
+	(( $#dirs )) && path=($dirs $path)
+}
+
+path_add \
+	"$XDG_BIN_HOME" \
+	"$CARGO_BIN_HOME" \
+	"${HOMEBREW_PREFIX:-/opt/homebrew}/opt/rustup/bin" \
+	/usr/local/opt/rustup/bin \
+	"$PNPM_HOME"

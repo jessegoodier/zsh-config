@@ -71,13 +71,13 @@ load-zsh-patina() {
 	if [[ ! -x $ZSH_PATINA_PATH ]]; then
 		if ! (( $+commands[cargo] )); then
 			print -u2 -P "%F{red}zsh-patina binary not found at $ZSH_PATINA_PATH%f"
-			print -u2 -P "Install Rust[](https://rustup.rs) and then run:"
+			print -u2 -P "Install Rust from https://rustup.rs and then run:"
 			print -u2 -P "  (cd $dir && cargo build --release)"
 			return 1
 		fi
 
 		print -u2 -P "==> Building %F{cyan}zsh-patina%f..."
-		if ! (cd "$dir" && cargo build --release --quiet); then
+		if ! (cd "$dir" && env -u CARGO_TARGET_DIR cargo build --release --quiet); then
 			print -u2 -P "%F{red}✗ Failed to build zsh-patina%f"
 			return 1
 		fi
@@ -169,13 +169,20 @@ load-zsh-patina >/dev/null
 source "$(plugin-path romkatv gitstatus)"
 source "$(plugin-path romkatv zsh-defer)"
 
-# Defer the rest (they are already installed, so no extra messages)
-zsh-defer -c '
+# Completions must exist before anything calls `compdef` (personal-config, OMZ snippets)
+# Stock /bin/zsh omits Apple Silicon Homebrew; without this, `compdef _kubectl …`
+# autoloads a function whose file is never on fpath.
+typeset -gU fpath
+fpath=(${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh/site-functions(/N) $fpath)
+zstyle ':plugin:ez-compinit' 'use-cache' yes
 source "$(plugin-path mattmc3 ez-compinit)"
 source "$(plugin-path zsh-users zsh-completions)"
-source "$(plugin-path aloxaf fzf-tab)"
-source "$(plugin-path zsh-users zsh-autosuggestions)"
-source "$(plugin-path zsh-users zsh-history-substring-search)"
-source "$(plugin-path houssamouhra colored-man-pages)"
+
+# One deferred task: avoid five precmd + reset-prompt cycles
+zsh-defer -c "
+source \"$(plugin-path aloxaf fzf-tab)\"
+source \"$(plugin-path zsh-users zsh-autosuggestions)\"
+source \"$(plugin-path zsh-users zsh-history-substring-search)\"
+source \"$(plugin-path houssamouhra colored-man-pages)\"
 load-zsh-patina
-'
+"

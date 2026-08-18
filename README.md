@@ -1,5 +1,9 @@
 # Zsh Config
 
+Thanks to [houssamouhra/zsh-config](https://github.com/houssamouhra/zsh-config) for the inspiration!
+
+----------------------------------------------------------------------------------------------------
+
 A modular, lightweight, and performance-focused Zsh configuration built for my workflow as a software engineer.
 
 > [!Note]
@@ -12,18 +16,20 @@ Speed and simplicity first.
 
 No frameworks. No bloat.
 
-The configuration is fully modular, deliberately minimal, and built so that every piece has a clear reason to exist.
+The configuration is fully modular, deliberately minimal, and built so that every piece has a clear reason to exist. Opinions (kubectl, macOS, editor, kube prompt) live in an optional overlay so the core stays copyable.
+
+**Want to use it?** See [README-howto.md](./README-howto.md) for install, overlay vs private files, and how to make it yours.
 
 ## Features
 
 - **Modular configuration**  
-  Split into focused modules (`prompt`, `history`, `keybinds`, `aliases`, `fzf`, `functions`) for easy maintenance.
+  Split into focused modules (`prompt`, `history`, `keybinds`, `completion`, `aliases`, `fzf`, `functions`) for easy maintenance.
 
 - **Fast startup**  
-  Deferred plugin loading (`zsh-defer`), lazy-loaded functionality, cached completions (`ez-compinit`), and a non-blocking prompt. First prompt appears in ~17 ms.
+  Deferred plugin loading (`zsh-defer`), lazy-loaded functionality, cached completions (`ez-compinit`), and a non-blocking prompt.
 
 - **Minimal native prompt**  
-  Smart path truncation, real-time Git status, command duration, and command state. No external prompt frameworks.
+  Smart path truncation, real-time Git status, command duration, and command state. No external prompt frameworks. The overlay may prefix kube context via `KUBE_INFO`.
 
 - **Enhanced completions**  
   Interactive `fzf-tab` menu with extra completions from `zsh-completions`.
@@ -35,7 +41,10 @@ The configuration is fully modular, deliberately minimal, and built so that ever
   Syntax highlighting (`zsh-patina`), colored man pages, useful aliases, custom functions, and thoughtful keybindings.
 
 - **Lightweight by design**  
-  No Oh My Zsh, no heavy plugin managers. Just a [minimal custom loader](https://github.com/houssamouhra/zsh-config/blob/main/.config/zsh/plugins.zsh), and a carefully chosen set of plugins.
+  No plugin manager and no Oh My Zsh framework. A [minimal custom loader](.config/zsh/plugins.zsh) clones a small plugin set on first use. The overlay vendors three Oh My Zsh *snippets* (git / kubectl / macos aliases) without loading the framework.
+
+- **Optional overlay**  
+  `$ZDOTDIR/personal-config.zsh` is the public opinionated layer. `$HOME/.zsh-config-private.zsh` is gitignored for machine-local secrets.
 
 ## Terminal
 
@@ -43,7 +52,7 @@ Shell startup is only part of the experience. I use [Ghostty](https://ghostty.or
 
 ## Plugins
 
-A small set of focused plugins keeps the shell efficient and practical.
+Cloned on first use into `$ZDOTDIR/plugins` (gitignored). `update-plugin` refreshes those clones.
 
 - [gitstatus](https://github.com/romkatv/gitstatus) — extremely fast Git status for the prompt
 - [zsh-defer](https://github.com/romkatv/zsh-defer) — defers non-critical plugins to improve startup time
@@ -55,17 +64,23 @@ A small set of focused plugins keeps the shell efficient and practical.
 - [colored-man-pages](https://github.com/houssamouhra/colored-man-pages) — colored man pages
 - [zsh-patina](https://github.com/michel-kraemer/zsh-patina) — fast syntax highlighting
 
+Vendored snippets (shipped in-tree, not cloned): [ohmyzsh git](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/git), [kubectl](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/kubectl), and [macos](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/macos).
+
 ## Benchmark
 
-Measured interactively **on login** with [zsh-bench](https://github.com/romkatv/zsh-bench):
+This fork is much slower than the original, but fast enough for me.
+
+Measured **2026-08-18** with [zsh-bench](https://github.com/romkatv/zsh-bench) `--iters 16 --login yes` (minimum over 16 login iterations). Apple Silicon Mac, zsh 5.9. Scratch `HOME` with this repo’s published files (core + `personal-config.zsh`, no private overlay) and plugins already cloned.
 
 | Metric              | Result     |
 |---------------------|-----------:|
-| First prompt lag    | 16.963 ms  |
-| First command lag   | 17.380 ms  |
-| Command lag         | 13.187 ms  |
-| Input lag           |  3.318 ms  |
-| Exit time           | 15.100 ms  |
+| First prompt lag    | 56.693 ms  |
+| First command lag   | 60.213 ms  |
+| Command lag         | 14.976 ms  |
+| Input lag           |  3.142 ms  |
+| Exit time           | 46.944 ms  |
+
+`ez-compinit` queues `compdef` during startup and runs real `compinit` on first prompt, so zsh-bench reports `has_compsys=1`. Autosuggestions and the gitstatus daemon start on idle via `zsh-defer`, so `has_autosuggestions` and `has_git_prompt` are 0 on that snapshot. Syntax highlighting is zsh-patina, which zsh-bench does not detect (`has_syntax_highlighting` only recognizes zsh-syntax-highlighting and fast-syntax-highlighting). Re-run after changing the overlay; see [README-howto.md](./README-howto.md#6-recreate-the-benchmark).
 
 ## License
 

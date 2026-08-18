@@ -4,7 +4,9 @@
 #   3. Is the repo in a notable state?       → status icons (+!?✘=$⇡⇣)
 #   4. Did my last command fail / take long? → CMD_STATUS + CMD_DURATION
 #
-typeset -g PATH_INFO GIT_INFO CMD_STATUS CMD_DURATION
+# Overlay may set KUBE_INFO as an optional prefix; the core leaves it empty.
+#
+typeset -g PATH_INFO GIT_INFO KUBE_INFO CMD_STATUS CMD_DURATION
 typeset -g _LAST_PWD _LAST_WORKTREE _REPO_NAME
 typeset -g _GITSTATUS_READY=0
 typeset -g _PROMPT_START_TIME
@@ -128,5 +130,5 @@ precmd() {
 	_refresh_path_info
 }
 
-PROMPT=$'\n%B%F{blue}${PATH_INFO}%f%b ${GIT_INFO}\n${CMD_STATUS} '
+PROMPT=$'\n${KUBE_INFO}%B%F{blue}${PATH_INFO}%f%b ${GIT_INFO}\n${CMD_STATUS} '
 RPROMPT='${CMD_DURATION}'
