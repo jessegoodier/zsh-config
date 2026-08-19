@@ -1,0 +1,51 @@
+# goal of this is to be very fast and only protect from committing a crime, like pushing secrets or committing to main
+# ci will fix formatting and run other checks when a PR is created
+# note that all scripts are local, avoiding 3rd party vulnerabilities
+repos:
+- repo: local
+  hooks:
+  - id: check-secrets
+    name: check for committed secrets
+    entry: python3 scripts/pre_commit_hooks/check_secrets.py
+    language: system
+    stages: [pre-commit, pre-push]
+    types: [text]
+    args: ["--exclude-files=uv.lock"]
+  - id: prevent-protected-branch
+    name: prevent direct commits and pushes to main
+    entry: python3 scripts/pre_commit_hooks/prevent_protected_branch.py
+    language: system
+    always_run: true
+    pass_filenames: false
+    stages: [pre-commit, pre-push]
+  - id: check-repo-safety
+    name: check for repo safety
+    entry: python3 scripts/pre_commit_hooks/check_repo_safety.py
+    language: system
+    stages: [pre-commit, pre-push]
+  - id: trailing-whitespace
+    name: check trailing whitespace
+    entry: python3 scripts/pre_commit_hooks/check_trailing_whitespace.py
+    language: system
+    types:
+    - text
+  - id: end-of-file-fixer
+    name: check end of file
+    entry: python3 scripts/pre_commit_hooks/end_of_file_fixer.py
+    language: system
+  - id: check-yaml
+    name: check yaml
+    entry: python3 scripts/pre_commit_hooks/check_yaml.py
+    language: system
+    args:
+    - --allow-multiple-documents
+    # exclude: ^()
+  - id: sort-zsh-aliases
+    name: sort aliases and spelling dictionary
+    entry: python3 scripts/pre_commit_hooks/sorter.py
+    language: system
+    files: >
+      (?x)^(
+        \.config/zsh/config/aliases\.zsh|
+        \.config/cspell/cspell\.txt
+      )$

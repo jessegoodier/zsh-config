@@ -86,29 +86,18 @@ _kube_prompt() {
 	_KUBE_PROMPT_MTIME=$now
 
 	local out ctx ns
-	out=$(command kubectl config view --minify -o jsonpath='{.current-context}/{.contexts[0].context.namespace}' 2>/dev/null) || {
+	out=$(command kubectl config view --minify -o jsonpath='{.current-context}{"\t"}{.contexts[0].context.namespace}' 2>/dev/null) || {
 		KUBE_INFO=
 		return
 	}
-	ctx=${out%%/*}
-	ns=${out#*/}
+	ctx=${out%%$'\t'*}
+	ctx=${ctx#${KUBE_CONTEXT_PREFIX:-}}
+	ns=${out#*$'\t'}
 	[[ -z $ns ]] && ns=default
 	[[ -n $ctx ]] && KUBE_INFO="%F{cyan}${ctx}/${ns}%f " || KUBE_INFO=
 }
 add-zsh-hook precmd _kube_prompt
 zsh-defer -c '_KUBE_PROMPT_READY=1; _kube_prompt; zle && zle reset-prompt'
-
-# --- Functions ---
-password_gen() {
-	local str
-	while true; do
-		str=$(LC_ALL=C tr -dc 'a-zA-Z0-9_' < /dev/urandom | head -c 16)
-		if [[ "$str" == *_* && "$str" != _* && "$str" != *_ ]]; then
-			echo "$str"
-			break
-		fi
-	done
-}
 
 # --- Extra files (last so they can override) ---
 [[ -f ~/.keys ]] && source ~/.keys

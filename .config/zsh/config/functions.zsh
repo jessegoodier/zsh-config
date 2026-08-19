@@ -199,3 +199,169 @@ weather() {
 	echo "${C_CYAN}Fetching weather data...${C_NC}"
 	curl -s "https://wttr.in/${loc}${format}"
 }
+
+uvi() {
+	uv venv --clear || return
+	source .venv/bin/activate || return
+	if [ -f "pyproject.toml" ]; then
+		uv sync --all-extras --active --upgrade
+	elif [ -f "requirements.txt" ]; then
+		uv pip install -r requirements.txt
+	elif [ -f "requirements-dev.txt" ]; then
+		uv pip install -r requirements-dev.txt
+	else
+		echo "No requirements file found"
+		return 1
+	fi
+}
+nai() {
+  helm template kubecost-nightly --repo https://kubecost.github.io/nightly-helm-chart kubecost \
+  --set networkCosts.enabled=true \
+  --set clusterController.enabled=true \
+  --set global.platforms.cicd.skipSanityChecks=true \
+    "$@" \
+    --skip-tests | yq -r ".. | .image? | select(. != null)" | sort -u
+}
+
+# kubecost all images
+kai() {
+  helm template kubecost-ga --repo https://kubecost.github.io/kubecost kubecost \
+    "$@" \
+    --skip-tests | yq -r ".. | .image? | select(. != null)" | sort -u
+}
+kla() {
+  if [[ -n $(kubectl get pods -l app=aggregator -o name 2>/dev/null) ]]; then
+    kubectl logs -l app=aggregator -c aggregator --tail=-1
+  else
+    kubectl logs -l app=cost-analyzer -c aggregator --tail=-1
+  fi
+}
+klap() {
+  if [[ -n $(kubectl get pods -l app=aggregator -o name 2>/dev/null) ]]; then
+    kubectl logs -l app=aggregator -c aggregator --previous
+  else
+    kubectl logs -l app=cost-analyzer -c aggregator --previous
+  fi
+}
+klaf() {
+  if [[ -n $(kubectl get pods -l app=aggregator -o name 2>/dev/null) ]]; then
+    kubectl logs -l app=aggregator -c aggregator --tail=-1 --follow
+  else
+    kubectl logs -l app=cost-analyzer -c aggregator --tail=-1 --follow
+  fi
+}
+cat() {
+  if (( $+commands[bat] )) && [[ -t 1 && $# -gt 0 && "$1" != -* ]]; then
+    bat --plain --paging=never "$@"
+  else
+    command cat "$@"
+  fi
+}
+if [ "$(command -v eza)" ]; then
+  alias ll='eza -l --color always --icons -a -s type'
+  alias l='eza --color always --icons -a -s type'
+  alias la='eza -l --color always --icons -a -s type'
+  alias ls='eza -G  --color auto --icons -a -s type'
+fi
+scan_image() {
+    emulate -L zsh
+
+    local image="$1"
+    local image_type="${2:-unknown}"
+
+    if [[ -z "$image" ]]; then
+      echo "Usage: scan_image <image> [image_type]" >&2
+      return 2
+    fi
+
+    echo "Scanning $image_type image: $image"
+
+    local tmpdir raw temp_result temp_combined
+    tmpdir=$(mktemp -d) || return 1
+    {
+      raw="$tmpdir/trivy.json"
+      temp_result="$tmpdir/result.json"
+      temp_combined="$tmpdir/combined.json"
+
+      command trivy image --format json --exit-code 0 --ignore-unfixed \
+        --severity CRITICAL,HIGH,MEDIUM,LOW "$image" > "$raw" || return
+
+      # command jq -M: aliases.zsh forces jq -C, which writes ANSI into .json files
+      command jq -M --arg img "$image" --arg type "$image_type" '
+        {
+          "image": $img,
+          "type": $type,
+          "base_vulnerabilities": (
+            [
+              (.Results // [])[] |
+              select(.Class == "os-pkgs") |
+              .Vulnerabilities // []
+            ] | flatten |
+            group_by(.Severity) |
+            map({
+              severity: .[0].Severity,
+              count: length,
+              vulnerabilities: map({
+                id: .VulnerabilityID,
+                package: .PkgName,
+                version: .InstalledVersion
+              })
+            })
+          ),
+          "binary_vulnerabilities": (
+            [
+              (.Results // [])[] |
+              select(.Class == "lang-pkgs") |
+              .Vulnerabilities // []
+            ] | flatten |
+            group_by(.Severity) |
+            map({
+              severity: .[0].Severity,
+              count: length,
+              vulnerabilities: map({
+                id: .VulnerabilityID,
+                package: .PkgName,
+                version: .InstalledVersion
+              })
+            })
+          )
+        }' "$raw" > "$temp_result" || {
+          echo "Error: failed to parse trivy JSON for $image" >&2
+          return 1
+        }
+
+      [[ -f scan_results.json ]] || echo "[]" > scan_results.json
+
+      command jq -M -s '.[0] + [.[1]]' scan_results.json "$temp_result" > "$temp_combined" || return
+      mv "$temp_combined" scan_results.json
+    } always {
+      rm -rf -- "$tmpdir"
+    }
+  }
+password_gen() {
+	local str
+	while true; do
+		str=$(LC_ALL=C tr -dc 'a-zA-Z0-9_' < /dev/urandom | head -c 16)
+		if [[ "$str" == *_* && "$str" != _* && "$str" != *_ ]]; then
+			echo "$str"
+			break
+		fi
+	done
+}
+### Make a directory and cd into it, parents included.
+###   mkcd ~/src/new/project
+### https://github.com/mattmc3/zephyr/blob/main/functions/mkcd
+mdcd() {
+  emulate -L zsh
+
+  [[ -n "${1:-}" ]] || { print -ru2 -- "mkcd: expecting a directory argument"; return 1 }
+  mkdir -p -- "$1" && builtin cd -- "$1"
+}
+mdtmpcd() {
+  emulate -L zsh
+
+  # The template is spelled out because GNU and BSD mktemp disagree about -t.
+  local dir tmp=${${TMPDIR:-/tmp}%/}
+  dir=$(mktemp -d "$tmp/${1:-tmp}.XXXXXXXX") || return 1
+  builtin cd -- "$dir" && print -r -- "$PWD"
+}

@@ -22,28 +22,28 @@ The configuration is fully modular, deliberately minimal, and built so that ever
 
 ## Features
 
-- **Modular configuration**  
+- **Modular configuration**
   Split into focused modules (`prompt`, `history`, `keybinds`, `completion`, `aliases`, `fzf`, `functions`) for easy maintenance.
 
-- **Fast startup**  
+- **Fast startup**
   Deferred plugin loading (`zsh-defer`), lazy-loaded functionality, cached completions (`ez-compinit`), and a non-blocking prompt.
 
-- **Minimal native prompt**  
+- **Minimal native prompt**
   Smart path truncation, real-time Git status, command duration, and command state. No external prompt frameworks. The overlay may prefix kube context via `KUBE_INFO`.
 
-- **Enhanced completions**  
+- **Enhanced completions**
   Interactive `fzf-tab` menu with extra completions from `zsh-completions`.
 
-- **Smart history**  
+- **Smart history**
   Substring search, history-based autosuggestions, and optimized history settings.
 
-- **Quality-of-life features**  
+- **Quality-of-life features**
   Syntax highlighting (`zsh-patina`), colored man pages, useful aliases, custom functions, and thoughtful keybindings.
 
-- **Lightweight by design**  
+- **Lightweight by design**
   No plugin manager and no Oh My Zsh framework. A [minimal custom loader](.config/zsh/plugins.zsh) clones a small plugin set on first use. The overlay vendors three Oh My Zsh *snippets* (git / kubectl / macos aliases) without loading the framework.
 
-- **Optional overlay**  
+- **Optional overlay**
   `$ZDOTDIR/personal-config.zsh` is the public opinionated layer. `$HOME/.zsh-config-private.zsh` is gitignored for machine-local secrets.
 
 ## Terminal
