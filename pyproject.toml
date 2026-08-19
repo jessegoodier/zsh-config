@@ -1,0 +1,20 @@
+[project]
+name = "zsh-config"
+version = "0.1.0"
+description = "python tools for my profile"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp",
+    "pre-commit",
+    "pyyaml",
+    "requests",
+    "rich",
+]
+
+[project.scripts]
+zsh-config = "zsh_config:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"

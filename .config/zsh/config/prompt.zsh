@@ -7,7 +7,7 @@
 # Overlay may set KUBE_INFO as an optional prefix; the core leaves it empty.
 #
 typeset -g PATH_INFO GIT_INFO KUBE_INFO CMD_STATUS CMD_DURATION
-typeset -g _LAST_PWD _LAST_WORKTREE _REPO_NAME
+typeset -g _LAST_PWD
 typeset -g _GITSTATUS_READY=0
 typeset -g _PROMPT_START_TIME
 setopt PROMPT_SUBST
@@ -48,42 +48,16 @@ git_prompt() {
 }
 
 _refresh_path_info() {
-	local new_worktree=${VCS_STATUS_WORKDIR:-}
-
 	# Only recalculate when something actually changed
-	if [[ $PWD != ${_LAST_PWD-} || $new_worktree != ${_LAST_WORKTREE-} ]]; then
-		_REPO_NAME=${new_worktree:t}
-		_LAST_WORKTREE=$new_worktree
+	if [[ $PWD != ${_LAST_PWD-} ]]; then
 		PATH_INFO=$(path_prompt)
 		_LAST_PWD=$PWD
 	fi
 }
 
-# Path: repo-relative when in git, otherwise last 1–2 dirs
+# Full path, replacing $HOME with ~
 path_prompt() {
-	if [[ $VCS_STATUS_RESULT == ok-* ]]; then
-		if [[ $PWD == $VCS_STATUS_WORKDIR ]]; then
-			print -rn -- "${_REPO_NAME}"
-			return
-		fi
-
-		local relative=${PWD#$VCS_STATUS_WORKDIR/}
-		if [[ $relative == */* ]]; then
-			print -rn -- "󰇘/${relative:h:t}/${relative:t}"
-		else
-			print -rn -- "󰇘/${relative}"
-		fi
-	else
-
-		local p=${(%):-%~}
-		if [[ $p == */*/* ]]; then
-			print -rn -- "󰇘/${p:h:t}/${p:t}"
-		elif [[ $p == */* ]]; then
-			print -rn -- "󰇘/${p:t}"
-		else
-			print -rn -- "$p"
-		fi
-	fi
+	print -rn -- "${(%):-%~}"
 }
 
 # Called by gitstatus when the async result arrives

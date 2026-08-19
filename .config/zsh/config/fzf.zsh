@@ -30,29 +30,11 @@ _fzf_init() {
 	unfunction _fzf_init
 }
 
-# Lazy load Ctrl+R history search
+# Lazy load Ctrl+R history search.
+# Use fzf's widget so multi-line history is restored with newlines intact
+# (fc -l / LBUFFER assignment flattens them to spaces).
 _fzf_history_lazy() {
 	_fzf_init
-	fzf-history-widget() {
-		local selected ret=0
-		emulate -L zsh
-		setopt pipefail no_aliases
-
-		selected=$(
-			fc -lnr 1 |
-			awk '!seen[$0]++' |
-			FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS:-} ${FZF_CTRL_R_OPTS}" \
-			fzf +m --query "$LBUFFER"
-		)
-
-		ret=$?
-		[[ -z "$selected" ]] && { zle redisplay; return $ret; }
-
-		LBUFFER="$selected"
-		zle reset-prompt
-	}
-
-	zle -N fzf-history-widget
 	zle fzf-history-widget
 }
 zle -N _fzf_history_lazy
