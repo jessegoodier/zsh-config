@@ -2,6 +2,7 @@
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_BIN_HOME="$HOME/.local/bin"
 export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_STATE_HOME="$HOME/.local/state"
 
 # Zsh configuration and plugins directories
 export ZSH_CONFIG_DIR="$ZDOTDIR/config"

@@ -38,18 +38,27 @@ z() {
 	z "$@"
 }
 
-# open yazi either at the given directory
-# or at the one zoxide suggests
+# open yazi either at the given directory or at the one zoxide suggests.
+# On exit, cd into whatever directory yazi was in when you quit.
 y() {
+	local cwd
+	cwd=$(mktemp)
+
+	local target
 	if [[ -n $1 ]]; then
 		if [ -d "$1" ]; then
-			yazi "$1"
+			target="$1"
 		else
-			yazi "$(zoxide query "$1")"
+			target="$(zoxide query "$1")"
 		fi
-	else
-		yazi
 	fi
+
+	yazi ${target:+"$target"} --cwd-file="$cwd"
+
+	local dir
+	dir=$(cat -- "$cwd")
+	rm -f -- "$cwd"
+	[[ -n $dir && $dir != "$PWD" ]] && builtin cd -- "$dir"
 }
 
 # fnm lazy load
@@ -387,4 +396,9 @@ fi
 
 if [[ -f ~/git/utils-python/epoch-converter.py ]]; then
   alias ep="~/git/utils-python/epoch-converter.py"
+fi
+
+if [ "$commands[kubectx]" ]; then
+  alias kn='kubens'
+  alias kx='kubectx'
 fi
