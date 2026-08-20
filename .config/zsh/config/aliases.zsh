@@ -10,9 +10,9 @@ alias fonts='fc-list : family | sort -u'
 alias gccl='gcloud container clusters list 2>/dev/null'
 alias grep='grep --color=auto'
 alias gs='git status -s'
-alias h='history'
+# zsh `history` with no args lists the last 16 events (unlike bash).
+alias h='history 1'
 alias hru='helm repo update'
-# alias jq='jq -C'
 alias kd='kubectl describe'
 alias kdelsts="kubectl delete sts"
 alias kdpi="kubectl get pods -o jsonpath='{.items[*].spec.containers[*].image}' | tr -s '[[:space:]]' '\n' | sort -u"

@@ -120,7 +120,9 @@ alias krsss='kubectl rollout status statefulset'
 alias krrss='kubectl rollout restart statefulset'
 
 # Port forwarding
-alias kpf="kubectl port-forward"
+# use jessegoodier/kpf
+# alias kpf="kubectl port-forward"
+
 
 # Tools for accessing all information
 alias kga='kubectl get all'

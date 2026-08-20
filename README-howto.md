@@ -10,12 +10,12 @@ This repo is an XDG zsh setup: a tiny `$HOME/.zshenv` points zsh at `$XDG_CONFIG
 .config/zsh/.zshrc              →  plugins + modules + overlays
 .config/zsh/plugins.zsh         →  clone/load plugins
 .config/zsh/config/*.zsh        →  prompt, history, keys, completion, aliases, fzf, functions
-.config/zsh/personal-config.zsh →  public overlay (kubectl, macOS, kube prompt, …)
+.config/zsh/personal-config.zsh →  public overlay (kubectl, kube prompt, …)
 .config/fzf/                    →  fzf theme + preview script
 .zsh-config-private.zsh         →  $HOME/.zsh-config-private.zsh (not in git)
 ```
 
-`$ZDOTDIR/plugins/` is gitignored. `plugin-path` clones into it; `update-plugin` refreshes those clones. Three Oh My Zsh _snippets_ (git / kubectl / macos) ship under `plugins/oh-my-zsh-plugins/` without the framework.
+`$ZDOTDIR/plugins/` is gitignored. `plugin-path` clones into it; `update-plugin` refreshes those clones. Three Oh My Zsh _snippets_ (git / kubectl) ship under `plugins/oh-my-zsh-plugins/` without the framework.
 
 ## Requirements
 

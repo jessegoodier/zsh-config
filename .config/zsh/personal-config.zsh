@@ -24,16 +24,12 @@ git_current_branch() {
 	print -r -- ${ref#refs/heads/}
 }
 
-# lib/functions.zsh helper used by macos.plugin.zsh
-(( $+functions[open_command] )) || open_command() { command open "$@" }
-
 _omz_plugins="$ZSH_PLUGIN_DIR/oh-my-zsh-plugins"
 # Defer alias packs so first prompt stays fast.
 # git.plugin.zsh uses `local` at top level; source it in a function so that is legal.
 zsh-defer -c "
 [[ -r $_omz_plugins/git.plugin.zsh ]] && () { source $_omz_plugins/git.plugin.zsh }
 [[ -r $_omz_plugins/kubectl.plugin.zsh ]] && source $_omz_plugins/kubectl.plugin.zsh
-[[ \"$OSTYPE\" == darwin* && -r $_omz_plugins/macos.plugin.zsh ]] && source $_omz_plugins/macos.plugin.zsh
 "
 unset _omz_plugins
 
