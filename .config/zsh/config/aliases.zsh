@@ -5,11 +5,13 @@ alias cursor='cursor --classic'
 alias deit='docker exec -i -t'
 alias df='df -h'
 alias ds='git diff --staged'
+alias eks='eksctl get cluster'
+alias ez='exec zsh'
 alias fed="kgsec federated-store -oyaml|ksd"
 alias fonts='fc-list : family | sort -u'
+# zsh `history` with no args lists the last 16 events (unlike bash).
 alias gccl='gcloud container clusters list 2>/dev/null'
 alias grep='grep --color=auto'
-# zsh `history` with no args lists the last 16 events (unlike bash).
 alias gs='git status -s'
 alias h='history 1'
 alias hru='helm repo update'
@@ -26,18 +28,17 @@ alias kgeventsw="kubectl get events --sort-by='.metadata.creationTimestamp' -w"
 alias kgnol='kubectl get nodes --show-labels'
 alias kgsts="kubectl get sts"
 alias krrsts='kubectl rollout restart sts'
-alias md='mkdir -p'
-alias ta='tmux attach'
 export BAT_PAGER='less -R'
 export LESS='-R'
 export PAGER=less
 unalias hin 2>/dev/null
 unalias hun 2>/dev/null
 unalias hup 2>/dev/null
+alias md='mkdir -p'
+alias ta='tmux attach'
 alias tkill='tmux kill-server'
 alias tks='tmux kill-session -t'
 alias tl='tmux list-sessions'
+alias -- -='cd -'
 alias tree='eza --tree --icons=auto'
 alias whatsmyip='curl -s -X GET -4 https://ifconfig.co'
-alias -- -='cd -'
-alias ez='exec zsh'

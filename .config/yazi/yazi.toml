@@ -1,0 +1,40 @@
+#:schema https://yazi-rs.github.io/schemas/yazi.json
+
+[mgr]
+linemode    = "size"
+show_hidden = true
+sort_by     = "natural"
+mouse_events = []
+
+[preview]
+wrap       = "yes"
+max_width  = 1500
+max_height = 1500
+
+[opener]
+edit = [
+	{ run = "${EDITOR:=vi} %s", desc = "$EDITOR", block = true },
+	{ run = "code %s", orphan = true },
+]
+play = [
+	{ run = "mpv --force-window %s" },
+	{ run = "iina --no-stdin %s" },
+	{ run = "mediainfo %s1; echo 'Press enter to exit'; read", block = true, desc = "Show media info" }
+]
+extract = [
+	{ run = "ya pub extract --list %s", desc = "Extract here" },
+	{ run = "open -a MacZip %s1", orphan = true, desc = "MacZip" }
+]
+subtitle = [
+	{ run = ''' printf "sub-add '%%s'\n" %s1 | socat - /tmp/mpv.sock ''', desc = "Add sub to MPV" },
+	{ run = "opencc -c tw2sp -i %s1 -o %s1", desc = "TW to SC" },
+]
+
+[open]
+prepend_rules = [
+	{ url = "*.{ass,srt,ssa,sty,sup,vtt}", use = [ "subtitle", "edit", "reveal" ] },
+]
+
+[tasks]
+image_alloc = 0
+image_bound = [ 0, 0 ]
