@@ -43,9 +43,16 @@ path_add() {
 	(( $#dirs )) && path=($dirs $path)
 }
 
+# Prefer Homebrew over /usr/bin (Apple jq, old git, …). Login shells: macOS
+# /etc/zprofile path_helper reorders PATH after this file; .zprofile undoes that.
+if [[ -x /opt/homebrew/bin/brew ]]; then
+	eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -x /usr/local/bin/brew ]]; then
+	eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+# User-local bins stay ahead of brew so $HOME/bin, cargo, etc. can override.
 path_add \
 	"$XDG_BIN_HOME" \
-	"$CARGO_BIN_HOME" \
 	"${HOMEBREW_PREFIX:-/opt/homebrew}/opt/rustup/bin" \
-	/usr/local/opt/rustup/bin \
 	"$PNPM_HOME"

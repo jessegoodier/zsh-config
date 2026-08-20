@@ -1,3 +1,14 @@
+# Drop plugin aliases with these names so this file's functions/aliases win.
+# (zsh aliases shadow functions; deferred OMZ plugins load after the first source.)
+() {
+	local n
+	for n in z y extract port myip pingmap weather uvi nai kai kla klap klaf \
+		cat ll l la ls scan_image password_gen mdcd mdtmpcd kpf ksd kgpv ki fnm-on
+	do
+		unalias "$n" 2>/dev/null
+	done
+}
+
 # Colors
 autoload -Uz colors && colors
 
@@ -283,7 +294,7 @@ scan_image() {
       temp_result="$tmpdir/result.json"
       temp_combined="$tmpdir/combined.json"
 
-      command trivy image --format json --exit-code 0 --ignore-unfixed \
+      command trivy image --quiet --format json --exit-code 0 --ignore-unfixed \
         --severity CRITICAL,HIGH,MEDIUM,LOW "$image" > "$raw" || return
 
       # command jq -M: aliases.zsh forces jq -C, which writes ANSI into .json files
@@ -333,7 +344,7 @@ scan_image() {
       [[ -f scan_results.json ]] || echo "[]" > scan_results.json
 
       command jq -M -s '.[0] + [.[1]]' scan_results.json "$temp_result" > "$temp_combined" || return
-      mv "$temp_combined" scan_results.json
+      mv "$temp_combined" scan_results.json && echo "Scan results updated in scan_results.json"
     } always {
       rm -rf -- "$tmpdir"
     }
@@ -365,3 +376,15 @@ mdtmpcd() {
   dir=$(mktemp -d "$tmp/${1:-tmp}.XXXXXXXX") || return 1
   builtin cd -- "$dir" && print -r -- "$PWD"
 }
+
+if (( $+commands[kubectl] && $+commands[kubectl-images] )); then
+  alias ki="kubectl images"
+fi
+
+if [[ -f ~/git/utils-python/orchestrator-info-rich.py ]]; then
+  alias orch="~/git/utils-python/orchestrator-info-rich.py"
+fi
+
+if [[ -f ~/git/utils-python/epoch-converter.py ]]; then
+  alias ep="~/git/utils-python/epoch-converter.py"
+fi

@@ -7,10 +7,23 @@ from pathlib import Path
 ALIAS_RE = re.compile(r"^\s*alias\s+([A-Za-z0-9_-]+)=")
 
 
+def _raise_duplicates(
+    filename: str, duplicates: dict[str, list[int]], kind: str
+) -> None:
+    if not duplicates:
+        return
+    details = ", ".join(
+        f"{name!r} (lines {', '.join(str(n) for n in nums)})"
+        for name, nums in sorted(duplicates.items())
+    )
+    raise ValueError(f"duplicate {kind} in {filename}: {details}")
+
+
 def sorted_alias_file(lines: list[str], filename: str) -> list[str]:
     alias_indexes: list[int] = []
     aliases: list[tuple[str, str]] = []
     definitions: dict[str, str] = {}
+    seen: dict[str, list[int]] = {}
 
     for index, line in enumerate(lines):
         match = ALIAS_RE.match(line)
@@ -19,18 +32,40 @@ def sorted_alias_file(lines: list[str], filename: str) -> list[str]:
         name = match.group(1)
         previous = definitions.get(name)
         if previous is not None and previous != line:
-            raise ValueError(f"conflicting definitions for alias {name!r} in {filename}")
+            raise ValueError(
+                f"conflicting definitions for alias {name!r} in {filename}"
+            )
         definitions[name] = line
+        seen.setdefault(name, []).append(index + 1)
         alias_indexes.append(index)
         aliases.append((name, line))
 
-    sorted_lines = [line for _, line in sorted(set(aliases))]
+    _raise_duplicates(
+        filename,
+        {n: nums for n, nums in seen.items() if len(nums) > 1},
+        "alias entries",
+    )
+
+    sorted_lines = [line for _, line in sorted(aliases)]
     result = lines.copy()
-    for index, line in zip(alias_indexes, sorted_lines):
+    for index, line in zip(alias_indexes, sorted_lines, strict=True):
         result[index] = line
-    for index in reversed(alias_indexes[len(sorted_lines) :]):
-        del result[index]
     return result
+
+
+def sorted_cspell_file(lines: list[str], filename: str) -> list[str]:
+    seen: dict[str, list[int]] = {}
+    for index, line in enumerate(lines):
+        word = line.rstrip("\n")
+        if not word.strip():
+            continue
+        seen.setdefault(word, []).append(index + 1)
+    _raise_duplicates(
+        filename,
+        {w: nums for w, nums in seen.items() if len(nums) > 1},
+        "entries",
+    )
+    return sorted(lines)
 
 
 def sort_file(filename: str) -> bool:
@@ -41,7 +76,10 @@ def sort_file(filename: str) -> bool:
         original = lines.copy()
         if lines and not lines[-1].endswith("\n"):
             lines[-1] += "\n"
-        updated = sorted(set(lines)) if path.name == "cspell.txt" else sorted_alias_file(lines, filename)
+        if path.name == "cspell.txt":
+            updated = sorted_cspell_file(lines, filename)
+        else:
+            updated = sorted_alias_file(lines, filename)
         if updated == original:
             return False
         with path.open("w", encoding="utf-8") as f:
