@@ -92,7 +92,6 @@ alias kgdwide='kgd -o wide'
 alias ked='kubectl edit deployment'
 alias kdd='kubectl describe deployment'
 alias kdeld='kubectl delete deployment'
-alias ksd='kubectl scale deployment'
 alias krsd='kubectl rollout status deployment'
 alias krrd='kubectl rollout restart deployment'
 
