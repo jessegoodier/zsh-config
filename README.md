@@ -16,7 +16,7 @@ Speed and simplicity first.
 
 No frameworks. No bloat.
 
-The configuration is fully modular, deliberately minimal, and built so that every piece has a clear reason to exist. Opinions (kubectl, macOS, editor, kube prompt) live in an optional overlay so the core stays copyable.
+The configuration is fully modular, deliberately minimal, and built so that every piece has a clear reason to exist. Opinions (kubectl, editor, kube prompt) live in an optional overlay so the core stays copyable.
 
 **Want to use it?** See [README-howto.md](./README-howto.md) for install, overlay vs private files, and how to make it yours.
 
@@ -41,7 +41,7 @@ The configuration is fully modular, deliberately minimal, and built so that ever
   Syntax highlighting (`zsh-patina`), colored man pages, useful aliases, custom functions, and thoughtful keybindings.
 
 - **Lightweight by design**
-  No plugin manager and no Oh My Zsh framework. A [minimal custom loader](.config/zsh/plugins.zsh) clones a small plugin set on first use. The overlay vendors three Oh My Zsh *snippets* (git / kubectl / macos aliases) without loading the framework.
+  No plugin manager and no Oh My Zsh framework. A [minimal custom loader](.config/zsh/plugins.zsh) clones a small plugin set on first use. The overlay vendors three Oh My Zsh *snippets* (git / kubectl aliases) without loading the framework.
 
 - **Optional overlay**
   `$ZDOTDIR/personal-config.zsh` is the public opinionated layer. `$HOME/.zsh-config-private.zsh` is gitignored for machine-local secrets.
@@ -64,7 +64,7 @@ Cloned on first use into `$ZDOTDIR/plugins` (gitignored). `update-plugin` refres
 - [colored-man-pages](https://github.com/houssamouhra/colored-man-pages) — colored man pages
 - [zsh-patina](https://github.com/michel-kraemer/zsh-patina) — fast syntax highlighting
 
-Vendored snippets (shipped in-tree, not cloned): [ohmyzsh git](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/git), [kubectl](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/kubectl), and [macos](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/macos).
+Vendored snippets (shipped in-tree, not cloned): [ohmyzsh git](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/git), [kubectl](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/kubectl).
 
 ## Benchmark
 
