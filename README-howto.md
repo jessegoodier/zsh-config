@@ -12,6 +12,7 @@ This repo is an XDG zsh setup: a tiny `$HOME/.zshenv` points zsh at `$XDG_CONFIG
 .config/zsh/config/*.zsh        →  prompt, history, keys, completion, aliases, fzf, functions
 .config/zsh/personal-config.zsh →  public overlay (kubectl, kube prompt, …)
 .config/fzf/                    →  fzf theme + preview script
+.config/zsh-patina/             →  syntax-highlight theme (valid commands = green)
 .zsh-config-private.zsh         →  $HOME/.zsh-config-private.zsh (not in git)
 ```
 
@@ -38,6 +39,7 @@ On macOS, Homebrew is the usual source for these. The Arch-oriented aliases in `
 [[ -e ~/.zshenv ]] && mv ~/.zshenv ~/.zshenv.bak
 [[ -e ~/.config/zsh ]] && mv ~/.config/zsh ~/.config/zsh.bak
 [[ -e ~/.config/fzf ]] && mv ~/.config/fzf ~/.config/fzf.bak
+[[ -e ~/.config/zsh-patina ]] && mv ~/.config/zsh-patina ~/.config/zsh-patina.bak
 ```
 
 Keep the backups until a new terminal starts cleanly.
@@ -53,6 +55,7 @@ mkdir -p ~/.config
 ln -s ~/git/zsh-config/.zshenv ~/.zshenv
 ln -s ~/git/zsh-config/.config/zsh ~/.config/zsh
 ln -s ~/git/zsh-config/.config/fzf ~/.config/fzf
+ln -s ~/git/zsh-config/.config/zsh-patina ~/.config/zsh-patina
 ```
 
 `$HOME/.zshenv` must be the repo file (or a copy of it). zsh only reads `$ZDOTDIR/.zshenv` automatically when `ZDOTDIR` is already set; this file sets it, then sources `$ZDOTDIR/.zshenv`.

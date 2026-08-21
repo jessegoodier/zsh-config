@@ -1,0 +1,3 @@
+[highlighting]
+# Prompt-matched theme: valid commands use ANSI green (same as git branch).
+theme = "file:$XDG_CONFIG_HOME/zsh-patina/theme.toml"
