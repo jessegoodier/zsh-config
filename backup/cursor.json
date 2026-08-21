@@ -1,0 +1,217 @@
+{
+    "search.followSymlinks": false,
+    "search.ripgrep.maxThreads": 3,
+    "editor.tokenColorCustomizations": {
+        "[Cobalt2]": {
+            "comments": "#8ff7f4",
+            "textMateRules": [
+                {
+                    "scope": [
+                        "comment",
+                        "punctuation.definition.comment"
+                    ],
+                    "settings": {
+                        "foreground": "#57ebff",
+                        "fontStyle": "italic"
+                    }
+                }
+            ]
+        }
+    },
+    "scm.defaultViewMode": "tree",
+    "editor.fontFamily": "JetBrainsMono Nerd Font, Menlo, monospace",
+    "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font",
+    "terminal.integrated.letterSpacing": 1.2,
+    "editor.letterSpacing": 0.6,
+    "files.autoSave": "onFocusChange",
+    "terminal.integrated.copyOnSelection": true,
+    "security.workspace.trust.untrustedFiles": "open",
+    "remote.autoForwardPortsSource": "hybrid",
+    "remote.autoForwardPorts": false,
+    "editor.autoSurround": "never",
+    "editor.wordSeparators": "`~!@#$%^&*()=+[{]}\\|;:'\",.<>/?",
+    "editor.multiCursorLimit": 100000,
+    "[helm]": {
+        "editor.autoSurround": "never",
+        "editor.autoClosingBrackets": "never",
+        "editor.autoClosingOvertype": "never",
+        "editor.formatOnSave": false,
+        "editor.formatOnPaste": false,
+        "editor.formatOnType": false
+    },
+    "cSpell.dictionaryDefinitions": [
+        {
+            "name": "jesse-local-profile",
+            "path": "/Users/jesse/.config/cspell/cspell.txt"
+        }
+    ],
+    "cSpell.dictionaries": [
+        "jesse-local-profile"
+    ],
+    "cSpell.enabledNotifications": {
+        "Lines too Long": false,
+        "Maximum Word Length Exceeded": false,
+        "Average Word Length too Long": false
+    },
+    "logFileHighlighter.customPatterns": [
+        {
+            "pattern": "WRN",
+            "foreground": "#ce8d00"
+        },
+        {
+            "pattern": "ERR",
+            "foreground": "#ff0000"
+        },
+        {
+            "pattern": "failed",
+            "foreground": "#ff0000"
+        },
+        {
+            "pattern": "INF",
+            "foreground": "#2ebb03"
+        },
+        {
+            "pattern": "Athena",
+            "background": "#005e59"
+        }
+    ],
+    "workbench.iconTheme": "vscode-icons",
+    "git.autofetch": true,
+    "redhat.telemetry.enabled": true,
+    "git.enableSmartCommit": true,
+    "git.confirmSync": false,
+    "update.showReleaseNotes": false,
+    "git.alwaysSignOff": false,
+    "[python]": {
+        "editor.formatOnSave": false,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "never"
+        },
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "vs-kubernetes": {
+        "vs-kubernetes.crd-code-completion": "enabled",
+        "vscode-kubernetes.kubectl-path-mac": "/Users/jesse/.vs-kubernetes/tools/kubectl/kubectl",
+        "vscode-kubernetes.minikube-path-mac": "/Users/jesse/.vs-kubernetes/tools/minikube/darwin-arm64/minikube",
+        "vscode-kubernetes.helm-path-mac": "/Users/jesse/.vs-kubernetes/tools/helm/darwin-arm64/helm"
+    },
+    "git.ignoreRebaseWarning": true,
+    "editor.minimap.enabled": false,
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "workbench.colorTheme": "Cobalt2",
+    "remote.SSH.remotePlatform": {
+        "jesse-ubuntu-34.229.142.79": "linux",
+        "ec2-jesse-ubuntu-34.229.142.79": "linux",
+        "nugget": "linux"
+    },
+    "[yaml]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "editor.autoIndent": "advanced",
+        "editor.formatOnSave": false,
+        "editor.formatOnPaste": false,
+        "editor.quickSuggestions": {
+            "other": true,
+            "comments": false,
+            "strings": true
+        },
+        "diffEditor.ignoreTrimWhitespace": false,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "prettier.yamlMaps": false
+    },
+    "yaml.validate": true,
+    "yaml.format.enable": false,
+    "yaml.format.singleQuote": false,
+    "yaml.format.proseWrap": "preserve",
+    "yaml.schemas": {
+        "https://json.schemastore.org/kustomization": "kustomization.yaml",
+        "https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json": "docker-compose*.yml"
+    },
+    "yaml.customTags": [
+        "!reference sequence",
+        "!import scalar",
+        "!include scalar"
+    ],
+    "yaml.disableAdditionalProperties": false,
+    "yaml.hover": true,
+    "yaml.completion": false,
+    "yaml.suggest.parentSkeletonSelectedFirst": true,
+    "yaml.style.flowMapping": "allow",
+    "yaml.style.flowSequence": "allow",
+    "makefile.configureOnOpen": true,
+    "[markdown]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "docker.extension.enableComposeLanguageServer": false,
+    "cursor.cpp.disabledLanguages": [
+        "plaintext"
+    ],
+    "[html]": {
+        "editor.defaultFormatter": "vscode.html-language-features"
+    },
+    "explorer.confirmDelete": false,
+    "gitlens.views.scm.grouped.views": {
+        "commits": false,
+        "branches": false,
+        "remotes": false,
+        "stashes": false,
+        "tags": false,
+        "worktrees": false,
+        "contributors": false,
+        "fileHistory": false,
+        "repositories": false,
+        "searchAndCompare": false,
+        "launchpad": false
+    },
+    "vsicons.dontShowNewVersionMessage": true,
+    "githubPullRequests.pullBranch": "never",
+    "explorer.confirmDragAndDrop": false,
+    "gitlens.views.tags.branches.layout": "list",
+    "workbench.externalBrowser": "edge",
+    "livePreview.customExternalBrowser": "Edge",
+    "diffEditor.ignoreTrimWhitespace": false,
+    "diffEditor.maxComputationTime": 0,
+    "terminal.integrated.defaultProfile.linux": "zsh",
+    "[dockercompose]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 2,
+        "editor.autoIndent": "advanced",
+        "editor.quickSuggestions": {
+            "other": true,
+            "comments": false,
+            "strings": true
+        },
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "[github-actions-workflow]": {
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
+    "geminicodeassist.displayInlineContextHint": false,
+    "vscode-edge-devtools.webhintInstallNotification": true,
+    "terminal.integrated.enableMultiLinePasteWarning": "never",
+    "docker.extension.dockerEngineAvailabilityPrompt": false,
+    "accessibility.signals.terminalBell": {
+        "sound": "off",
+        "announcement": "off"
+    },
+    "terminal.integrated.enableVisualBell": false,
+    "cursor.composer.shouldChimeAfterChatFinishes": true,
+    "editor.accessibilitySupport": "off",
+    "cursor.general.glassShowWarningNotifications": true,
+    "cursor.general.reduceTransparency": true,
+    "window.autoDetectColorScheme": false,
+    "cursor.composer.editorConversationDensity": "compact-ungrouped",
+    "cursor.composer.conversationDensity": "compact-ungrouped",
+    "python.languageServer": "None",
+    "cursorpyright.disableLanguageServices": true,
+    "js/ts.experimental.useTsgo": true,
+    "python.defaultInterpreterPath": "/usr/bin/python3",
+    "git.openRepositoryInParentFolders": "never",
+    "terminal.integrated.fontLigatures.enabled": true,
+    "cursor.composer.queueMessageDefaultBehavior": "steer"
+}

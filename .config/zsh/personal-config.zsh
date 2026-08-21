@@ -4,7 +4,8 @@
 path_add \
 	"$HOME/go/bin" \
 	"$HOME/bin" \
-	/opt/homebrew/opt/grep/libexec/gnubin
+	/opt/homebrew/opt/grep/libexec/gnubin \
+    "$(brew --prefix)/share/google-cloud-sdk/bin"
 
 # --- Shell options ---
 setopt AUTO_CD

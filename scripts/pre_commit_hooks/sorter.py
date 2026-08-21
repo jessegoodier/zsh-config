@@ -53,19 +53,16 @@ def sorted_alias_file(lines: list[str], filename: str) -> list[str]:
     return result
 
 
-def sorted_cspell_file(lines: list[str], filename: str) -> list[str]:
-    seen: dict[str, list[int]] = {}
-    for index, line in enumerate(lines):
-        word = line.rstrip("\n")
-        if not word.strip():
+def sorted_cspell_file(lines: list[str]) -> list[str]:
+    seen: set[str] = set()
+    unique: list[str] = []
+    for line in lines:
+        word = line.strip().lower()
+        if not word or word in seen:
             continue
-        seen.setdefault(word, []).append(index + 1)
-    _raise_duplicates(
-        filename,
-        {w: nums for w, nums in seen.items() if len(nums) > 1},
-        "entries",
-    )
-    return sorted(lines)
+        seen.add(word)
+        unique.append(f"{word}\n")
+    return sorted(unique)
 
 
 def sort_file(filename: str) -> bool:
@@ -77,7 +74,7 @@ def sort_file(filename: str) -> bool:
         if lines and not lines[-1].endswith("\n"):
             lines[-1] += "\n"
         if path.name == "cspell.txt":
-            updated = sorted_cspell_file(lines, filename)
+            updated = sorted_cspell_file(lines)
         else:
             updated = sorted_alias_file(lines, filename)
         if updated == original:
