@@ -1,0 +1,33 @@
+---
+description: Never PR or push to the original author's repo; this is a personal fork
+alwaysApply: true
+---
+
+# Personal fork — never PR upstream
+
+This repo is Jesse's personal fork of [houssamouhra/zsh-config](https://github.com/houssamouhra/zsh-config). The original author does **not** want changes from this fork.
+
+## Remotes
+
+| Remote | Repo | Allowed |
+|---|---|---|
+| `origin` | `jessegoodier/zsh-config` | fetch, push, PRs |
+| `upstream` | `houssamouhra/zsh-config` | fetch / cherry-pick only |
+
+## Never
+
+- Open a pull request against `houssamouhra/zsh-config` (or any other original-author remote)
+- `git push` to `upstream`
+- Use `gh pr create` without an explicit `--repo jessegoodier/zsh-config`
+
+Local git may have `gh-resolved = base` on `upstream`, which makes `gh` treat the original repo as the PR base. Always override:
+
+```bash
+gh pr create --repo jessegoodier/zsh-config --title "..." --body "..."
+```
+
+## Allowed
+
+- Fetch `upstream` and inspect commits this fork is behind on
+- Cherry-pick or port selected upstream changes **into this repo**
+- Open PRs on `jessegoodier/zsh-config` only
