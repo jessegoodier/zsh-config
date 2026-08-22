@@ -9,7 +9,6 @@ alias eks='eksctl get cluster'
 alias ez='exec zsh'
 alias fed="kgsec federated-store -oyaml|ksd"
 alias fonts='fc-list : family | sort -u'
-# zsh `history` with no args lists the last 16 events (unlike bash).
 alias gccl='gcloud container clusters list 2>/dev/null'
 alias grep='grep --color=auto'
 alias gs='git status -s'
