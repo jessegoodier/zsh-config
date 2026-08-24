@@ -51,6 +51,7 @@ git_prompt() {
 	(( VCS_STATUS_NUM_UNTRACKED )) && segments+=("⇡untracked${VCS_STATUS_NUM_UNTRACKED}")
 	(( $#segments )) && p+=" %B%F{red}[${(j. .)segments}]%f%b"
 
+
 	print -rn -- "$p"
 }
 
