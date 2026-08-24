@@ -225,3 +225,4 @@ __marimo__/
 .streamlit/secrets.toml
 .kubeconfig
 .config/cursor.json
+.config/zsh/.zsh_sessions/
