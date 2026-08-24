@@ -46,9 +46,8 @@ git_prompt() {
 	local -a segments
 	[[ -n $VCS_STATUS_ACTION ]] && segments+=("action${VCS_STATUS_ACTION}")
 	(( VCS_STATUS_NUM_CONFLICTED )) && segments+=("⇠conflicts${VCS_STATUS_NUM_CONFLICTED}")
-	(( VCS_STATUS_STASHES )) && segments+=("⇣stashes${VCS_STATUS_STASHES}")
-	(( VCS_STATUS_NUM_STAGED )) && segments+=("⇡staged${VCS_STATUS_NUM_STAGED}")
-	(( VCS_STATUS_NUM_UNSTAGED )) && segments+=("⇣unstaged${VCS_STATUS_NUM_UNSTAGED}")
+	# (( VCS_STATUS_STASHES )) && segments+=("⇣stashes${VCS_STATUS_STASHES}")
+	(( VCS_STATUS_NUM_STAGED + VCS_STATUS_NUM_UNSTAGED )) && segments+=("!$((VCS_STATUS_NUM_STAGED + VCS_STATUS_NUM_UNSTAGED))")
 	(( VCS_STATUS_NUM_UNTRACKED )) && segments+=("⇡untracked${VCS_STATUS_NUM_UNTRACKED}")
 	(( $#segments )) && p+=" %B%F{red}[${(j. .)segments}]%f%b"
 
