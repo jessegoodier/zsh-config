@@ -8,6 +8,7 @@ agentless
 agentpool
 aggregatable
 aiohttp
+AKIA
 alertmanager
 alexiosc
 altinity
@@ -196,6 +197,7 @@ gzipped
 harakat
 healthcheck
 healthz
+helmignore
 helmscan
 highmem
 home
@@ -360,6 +362,7 @@ pguser
 pipefail
 pipenv
 pipx
+PKCE
 pnpm
 podidentityassociation
 podspec
@@ -408,6 +411,7 @@ replicaset
 replicasets
 replicationcontrollers
 reserialized
+résumé
 rgba
 richprint
 rightsizer
@@ -418,7 +422,6 @@ rprompt
 rrdatas
 ruamel
 runid
-résumé
 sapt
 scipy
 sdist

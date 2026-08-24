@@ -21,6 +21,9 @@ export ATAC_KEY_BINDINGS="$ATAC_CONFIG_DIR/key_binds/vim_key_bindings.toml"
 # Disable docker hints
 export DOCKER_CLI_HINTS=false
 
+# Keep venv activate from prefixing the prompt with (env-name)
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+
 # Default editor and pager
 export EDITOR=nvim
 export VISUAL=$EDITOR
