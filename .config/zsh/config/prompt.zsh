@@ -1,7 +1,7 @@
 # The prompt answers four questions:
 #   1. Where am I?                           → PATH_INFO
 #   2. What Git context am I in?             → GIT_INFO (branch/tag/HEAD)
-#   3. Is the repo in a notable state?       → status icons (+!?✘=$⇡⇣)
+#   3. Is the repo in a notable state?       → 󰁅pull 󰁝push and 󰐕󰏫󰝒 counts
 #   4. Did my last command fail / take long? → CMD_STATUS + CMD_DURATION
 #
 # Overlay may set KUBE_INFO as an optional prefix; the core leaves it empty.
@@ -21,18 +21,11 @@ gitstatus_query -t 0 -c _gitstatus_async_update "MY_PROMPT"
 '
 
 # Git prompt
+# Example: 󰘬 main 󰁅3 󰁝2 [merge 󰀦1 󰀼2 󰐕4 󰏫5 󰝒1]
+# main ⇡2 ⇣1
 git_prompt() {
+	emulate -L zsh
 	[[ $VCS_STATUS_RESULT == ok-* ]] || return
-
-	local -a segments
-	(( VCS_STATUS_NUM_STAGED ))          && segments+=("+")
-	(( VCS_STATUS_NUM_UNSTAGED ))        && segments+=("!")
-	(( VCS_STATUS_NUM_UNTRACKED ))       && segments+=("?")
-	(( VCS_STATUS_NUM_STAGED_DELETED + VCS_STATUS_NUM_UNSTAGED_DELETED )) && segments+=("✘")
-	(( VCS_STATUS_NUM_CONFLICTED ))      && segments+=("=")
-	(( VCS_STATUS_STASHES ))             && segments+=("$")
-	(( VCS_STATUS_COMMITS_AHEAD  ))      && segments+=("⇡${VCS_STATUS_COMMITS_AHEAD}")
-	(( VCS_STATUS_COMMITS_BEHIND  ))     && segments+=("⇣${VCS_STATUS_COMMITS_BEHIND}")
 
 	local ref
 	if [[ -n $VCS_STATUS_LOCAL_BRANCH ]]; then
@@ -40,11 +33,26 @@ git_prompt() {
 	elif [[ -n $VCS_STATUS_TAG ]]; then
 		ref="#$VCS_STATUS_TAG"
 	else
-		ref="HEAD (${VCS_STATUS_COMMIT[1,7]})"
+		ref="@${VCS_STATUS_COMMIT[1,7]}"
 	fi
+	(( $#ref > 32 )) && ref[13,-13]="…"
 
-	print -rn -- "%F{green}󰘬 ${ref}%f"
-	(($#segments)) && print -rn -- " %B%F{red}[${(j::)segments}]%f%b"
+	local p="%F{green}󰘬 ${ref//\%/%%}%f"
+	(( VCS_STATUS_COMMITS_BEHIND )) && p+=" %F{cyan}⇡${VCS_STATUS_COMMITS_BEHIND}%f"
+	(( VCS_STATUS_COMMITS_AHEAD )) && p+=" %F{yellow}⇣${VCS_STATUS_COMMITS_AHEAD}%f"
+	(( VCS_STATUS_PUSH_COMMITS_BEHIND )) && p+=" %F{cyan}⇠${VCS_STATUS_PUSH_COMMITS_BEHIND}%f"
+	(( VCS_STATUS_PUSH_COMMITS_AHEAD )) && p+=" %F{yellow}⇢${VCS_STATUS_PUSH_COMMITS_AHEAD}%f"
+
+	local -a segments
+	[[ -n $VCS_STATUS_ACTION ]] && segments+=("action${VCS_STATUS_ACTION}")
+	(( VCS_STATUS_NUM_CONFLICTED )) && segments+=("⇠conflicts${VCS_STATUS_NUM_CONFLICTED}")
+	(( VCS_STATUS_STASHES )) && segments+=("⇣stashes${VCS_STATUS_STASHES}")
+	(( VCS_STATUS_NUM_STAGED )) && segments+=("⇡staged${VCS_STATUS_NUM_STAGED}")
+	(( VCS_STATUS_NUM_UNSTAGED )) && segments+=("⇣unstaged${VCS_STATUS_NUM_UNSTAGED}")
+	(( VCS_STATUS_NUM_UNTRACKED )) && segments+=("⇡untracked${VCS_STATUS_NUM_UNTRACKED}")
+	(( $#segments )) && p+=" %B%F{red}[${(j. .)segments}]%f%b"
+
+	print -rn -- "$p"
 }
 
 _refresh_path_info() {
