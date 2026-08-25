@@ -20,7 +20,6 @@ zstyle ':completion:*' accept-exact-dirs true
 zstyle ':completion:*' squeeze-slashes true
 zstyle ':completion:*' list-dirs-first true
 
-# FZF_DEFAULT_OPTS_FILE still applies (colors). Override layout so a short
-# candidate list is not crushed to one row by 90% height + border/margin/padding.
-zstyle ':fzf-tab:*' fzf-min-height 10
-zstyle ':fzf-tab:*' fzf-flags --height=10 --border=none --margin=0 --padding=0 --no-preview
+# Match Ctrl-R: 50% popup; colors/border/margin come from FZF_DEFAULT_OPTS_FILE.
+# fzf-tab appends fzf-flags last, so this overrides its candidate-count height.
+zstyle ':fzf-tab:*' fzf-flags --height=${FZF_TMUX_HEIGHT:-50%}
