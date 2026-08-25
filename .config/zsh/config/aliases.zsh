@@ -45,3 +45,4 @@ alias tl='tmux list-sessions'
 alias tree='eza --tree --icons=auto'
 alias whatsmyip='curl -s -X GET -4 https://ifconfig.co'
 alias zr='exec zsh'
+alias c=clear
