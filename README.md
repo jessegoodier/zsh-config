@@ -18,7 +18,7 @@ No frameworks. No bloat.
 
 The configuration is fully modular, deliberately minimal, and built so that every piece has a clear reason to exist. Opinions (kubectl, editor, kube prompt) live in an optional overlay so the core stays copyable.
 
-**Want to use it?** See [README-howto.md](./README-howto.md) for install, overlay vs private files, and how to make it yours.
+**Want to use it?** Run [installer.sh](./installer.sh) ([README-installer.md](./README-installer.md)). See [README-howto.md](./README-howto.md) for overlay vs private files and how to make it yours.
 
 ## Features
 
@@ -80,7 +80,7 @@ Measured **2026-08-18** with [zsh-bench](https://github.com/romkatv/zsh-bench) `
 | Input lag           |  3.142 ms  |
 | Exit time           | 46.944 ms  |
 
-`ez-compinit` queues `compdef` during startup and runs real `compinit` on first prompt, so zsh-bench reports `has_compsys=1`. Autosuggestions and the gitstatus daemon start on idle via `zsh-defer`, so `has_autosuggestions` and `has_git_prompt` are 0 on that snapshot. Syntax highlighting is zsh-patina, which zsh-bench does not detect (`has_syntax_highlighting` only recognizes zsh-syntax-highlighting and fast-syntax-highlighting). Re-run after changing the overlay; see [README-howto.md](./README-howto.md#6-recreate-the-benchmark).
+`ez-compinit` queues `compdef` during startup and runs real `compinit` on first prompt, so zsh-bench reports `has_compsys=1`. Autosuggestions and the gitstatus daemon start on idle via `zsh-defer`, so `has_autosuggestions` and `has_git_prompt` are 0 on that snapshot. Syntax highlighting is zsh-patina, which zsh-bench does not detect (`has_syntax_highlighting` only recognizes zsh-syntax-highlighting and fast-syntax-highlighting). Re-run after changing the overlay; see [README-howto.md](./README-howto.md#5-recreate-the-benchmark).
 
 ## License
 

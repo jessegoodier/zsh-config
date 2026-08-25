@@ -3,6 +3,9 @@
 uv.lock
 temp/
 
+# Timestamped installer backups (user configs; may contain secrets)
+backups/*/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
