@@ -37,6 +37,8 @@ Zoxide is a **smarter `cd`** that learns your most-visited directories. The lazy
 
 | Key       | Action                                                     |
 | --------- | ---------------------------------------------------------- |
+| `Home`    | Beginning of line                                          |
+| `End`     | End of line                                                |
 | `Ctrl+A`  | Beginning of line                                          |
 | `Ctrl+E`  | End of line                                                |
 | `Ctrl+B`  | Move back one char                                         |

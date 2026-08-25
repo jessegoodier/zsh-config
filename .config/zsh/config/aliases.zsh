@@ -1,6 +1,6 @@
 alias bob='bobide'
-alias bobcli='/opt/homebrew/bin/bob'
-alias bobshell='/opt/homebrew/bin/bob'
+alias bobcli="${HOMEBREW_PREFIX}/bin/bob"
+alias bobshell="${HOMEBREW_PREFIX}/bin/bob"
 alias brewup='brew update && brew upgrade -y'
 alias cursor='cursor --classic'
 alias deit='docker exec -i -t'

@@ -1,10 +1,11 @@
 .zsh-config-private.zsh
 .DS_Store
 uv.lock
-temp/
+
 
 # Timestamped installer backups (user configs; may contain secrets)
 backups/*/
+temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

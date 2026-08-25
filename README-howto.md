@@ -31,7 +31,7 @@ This repo is an XDG zsh setup: a tiny `$HOME/.zshenv` points zsh at `$XDG_CONFIG
 
 Optional: `kubectl` / `kubecolor` (overlay), `zoxide`, `yazi`, `fnm`, `keychain`, `nvim`. Missing tools are skipped or only break the alias that uses them.
 
-On macOS, Homebrew is the usual source for these. The Arch-oriented aliases in `config/aliases.zsh` (`pacman`, `yay`) are harmless if you do not type them.
+Homebrew is the usual source for these on macOS (`/opt/homebrew` or `/usr/local`) and Linux (`/home/linuxbrew/.linuxbrew` or `~/.linuxbrew`). `.zshenv` evals `brew shellenv` from the first of those that exists.
 
 ## 1. Clone and install
 

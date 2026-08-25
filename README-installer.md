@@ -71,6 +71,12 @@ Before linking, the installer checks for `git`, `fzf`, `eza`, `bat`, `fd`, `carg
 
 If `brew` is not on `PATH`, it also looks in `/opt/homebrew/bin`, `/usr/local/bin`, and the Linuxbrew locations. When Homebrew itself is missing, the prompt is to install Homebrew from [brew.sh](https://brew.sh) and then the formulae. `--brew` runs the Homebrew installer with `NONINTERACTIVE=1`.
 
+## Zsh plugins
+
+After linking `$HOME/.config/zsh`, the installer reads `plugin-path` entries from [`.config/zsh/plugins.zsh`](.config/zsh/plugins.zsh) and adds `zsh-patina`. For each plugin missing from `$HOME/.config/zsh/plugins/`, it clones from GitHub (same repos as first-launch `plugin-path`). If `zsh-patina` is present but not built, it runs `cargo build --release` when `cargo` is available.
+
+`./installer.sh --dry-run` lists each plugin as `OK` or prints `Would clone …` / `Would run: cargo build …` without changing anything. Needs `git` on `PATH` (or installable via `--brew`).
+
 ## History import
 
 This config writes history to `~/.cache/zsh/history` (`HISTFILE` in `config/history.zsh`). The installer asks whether to import `~/.zsh_history` there.
@@ -122,7 +128,7 @@ Only restore the paths you need. Copied shadowed files (`.zshrc` and friends) we
 
 - Does not touch `~/.zsh-config-private.zsh`, or history files / brew packages you did not opt into.
 - Does not run `chsh`.
-- Does not clone plugins (that happens on first launch) or build zsh-patina.
+- Clones missing zsh plugins into `$HOME/.config/zsh/plugins/` (see [Zsh plugins](#zsh-plugins)); `update-plugin` refreshes them later.
 - Does not install the Python venv unless you answer yes or pass `--python`.
 - Does not install Homebrew or formulae unless you answer yes or pass `--brew`.
 - Does not import `~/.zsh_history` unless you answer yes or pass `--history`.

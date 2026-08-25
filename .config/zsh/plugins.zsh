@@ -177,12 +177,13 @@ fpath=(${HOMEBREW_PREFIX:-/opt/homebrew}/share/zsh/site-functions(/N) $fpath)
 zstyle ':plugin:ez-compinit' 'use-cache' yes
 source "$(plugin-path mattmc3 ez-compinit)"
 source "$(plugin-path zsh-users zsh-completions)"
+# keybinds.zsh binds Up/Down to these widgets; load before config modules run.
+source "$(plugin-path zsh-users zsh-history-substring-search)"
 
 # One deferred task: avoid five precmd + reset-prompt cycles
 zsh-defer -c "
 source \"$(plugin-path aloxaf fzf-tab)\"
 source \"$(plugin-path zsh-users zsh-autosuggestions)\"
-source \"$(plugin-path zsh-users zsh-history-substring-search)\"
 source \"$(plugin-path houssamouhra colored-man-pages)\"
 load-zsh-patina
 "

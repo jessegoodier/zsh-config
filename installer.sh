@@ -386,7 +386,6 @@ for src in "$REPO_ROOT/.config"/*(N); do
 	[[ ${src:t} == .DS_Store ]] && continue
 	install_pair "$src" "$HOME/.config/${src:t}"
 done
-
 snapshot_shadowed
 import_zsh_history
 install_python_venv
