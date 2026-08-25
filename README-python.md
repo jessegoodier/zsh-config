@@ -2,13 +2,15 @@
 
 [pyproject.toml](pyproject.toml) contains the tools I use frequently, installed in my profile to make them available globally.
 
-Run this function to install the dependencies and activate the virtual environment. It will create a `.venv` directory in the root of the project and install the dependencies.
+`$HOME/.venv` is what `.zshrc` activates. [installer.sh](./installer.sh) can create this repo’s `.venv` with `uv sync` and symlink `~/.venv` there (prompt, or `--python` / `--no-python`). See [README-installer.md](./README-installer.md).
 
-The function activates the virtual environment in the current shell. Run it again in a new shell when you need these tools.
+To recreate or update the venv from a checkout of this repo:
 
 ```bash
 uvi
 ```
+
+The function activates the virtual environment in the current shell. Run it again in a new shell when you need these tools.
 
 To add a new tool, run:
 

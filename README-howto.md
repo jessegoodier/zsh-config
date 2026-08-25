@@ -33,32 +33,15 @@ Optional: `kubectl` / `kubecolor` (overlay), `zoxide`, `yazi`, `fnm`, `keychain`
 
 On macOS, Homebrew is the usual source for these. The Arch-oriented aliases in `config/aliases.zsh` (`pacman`, `yay`) are harmless if you do not type them.
 
-## 1. Back up what you have
-
-```zsh
-[[ -e ~/.zshenv ]] && mv ~/.zshenv ~/.zshenv.bak
-[[ -e ~/.config/zsh ]] && mv ~/.config/zsh ~/.config/zsh.bak
-[[ -e ~/.config/fzf ]] && mv ~/.config/fzf ~/.config/fzf.bak
-[[ -e ~/.config/zsh-patina ]] && mv ~/.config/zsh-patina ~/.config/zsh-patina.bak
-```
-
-Keep the backups until a new terminal starts cleanly.
-
-## 2. Clone and symlink
-
-Symlinks mean edits in the clone are live. Replace the clone path if you keep git checkouts elsewhere.
+## 1. Clone and install
 
 ```zsh
 git clone "https://github.com/jessegoodier/zsh-config.git" ~/git/zsh-config
-
-mkdir -p ~/.config
-ln -s ~/git/zsh-config/.zshenv ~/.zshenv
-ln -s ~/git/zsh-config/.config/zsh ~/.config/zsh
-ln -s ~/git/zsh-config/.config/fzf ~/.config/fzf
-ln -s ~/git/zsh-config/.config/zsh-patina ~/.config/zsh-patina
+cd ~/git/zsh-config
+./installer.sh
 ```
 
-`$HOME/.zshenv` must be the repo file (or a copy of it). zsh only reads `$ZDOTDIR/.zshenv` automatically when `ZDOTDIR` is already set; this file sets it, then sources `$ZDOTDIR/.zshenv`.
+The installer moves existing targets into a dated folder under `backups/`, then symlinks this clone into `$HOME`. It can also install missing tools with Homebrew and the Python venv. Re-runs skip paths that already point here. Details, flags, and restore: [README-installer.md](./README-installer.md).
 
 If zsh is not your login shell:
 
@@ -66,7 +49,7 @@ If zsh is not your login shell:
 chsh -s $(command -v zsh)
 ```
 
-## 3. First launch
+## 2. First launch
 
 Open a **new** terminal (do not `source` an old interactive session).
 
@@ -79,7 +62,7 @@ echo $ZDOTDIR    # should be ~/.config/zsh
 update-plugin    # later: refresh clones (skips the vendored OMZ snippets)
 ```
 
-## 4. Make it yours
+## 3. Make it yours
 
 Three layers, last writer wins:
 
@@ -97,7 +80,7 @@ Three layers, last writer wins:
 
 **Steal the loader only.** Copy `plugins.zsh` + `.zshenv` / `.zshrc` wiring and drop in your own `config/` modules. `plugin-path owner repo` clones `https://github.com/owner/repo` on first use.
 
-## 5. What loads when
+## 4. What loads when
 
 - **Eager:** gitstatus, zsh-defer, ez-compinit (queues `compdef`; real `compinit` on first prompt), zsh-completions, the `config/*.zsh` modules.
 - **Deferred (`zsh-defer`):** fzf-tab, autosuggestions, history-substring-search, colored-man-pages, zsh-patina, overlay alias packs.
@@ -105,7 +88,7 @@ Three layers, last writer wins:
 
 That split is what keeps first prompt snappy. Put slow or opinionated work in the overlay and `zsh-defer` it.
 
-## 6. Recreate the benchmark
+## 5. Recreate the benchmark
 
 From a machine where this config is the login shell (or a scratch `HOME` that symlinks it):
 
