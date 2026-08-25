@@ -3,6 +3,18 @@ bindkey -e
 # Cursor movement
 bindkey '^a' beginning-of-line
 bindkey '^e' end-of-line
+# Home/End: macOS terminals often map these; Linux sends CSI/SS3 sequences zsh
+# does not bind by default. terminfo when available, plus common fallbacks.
+if (( $+terminfo[khome] && $+terminfo[kend] )); then
+	bindkey "${terminfo[khome]}" beginning-of-line
+	bindkey "${terminfo[kend]}" end-of-line
+fi
+bindkey '\e[H' beginning-of-line
+bindkey '\e[F' end-of-line
+bindkey '\e[1~' beginning-of-line
+bindkey '\e[4~' end-of-line
+bindkey '\eOH' beginning-of-line
+bindkey '\eOF' end-of-line
 
 # Editing
 bindkey '^w' backward-kill-word

@@ -146,7 +146,12 @@ myip() {
 	fi
 
 	echo "${C_CYAN}Fetching IP details...${C_NC}"
-	local local_ip=$(route -n get default 2>/dev/null | grep 'interface:' | awk '{print $2}' | xargs ipconfig getifaddr 2>/dev/null)
+	local local_ip
+	if [[ "$OSTYPE" == darwin* ]]; then
+		local_ip=$(route -n get default 2>/dev/null | awk '/interface:/{print $2}' | xargs ipconfig getifaddr 2>/dev/null)
+	else
+		local_ip=$(ip -4 -o route get 1 2>/dev/null | awk '{print $7; exit}')
+	fi
 	[[ -z "$local_ip" ]] && local_ip="127.0.0.1"
 	local public_ip=$(curl -s https://ifconfig.me)
 	local geo_info=$(curl -s "https://ipinfo.io/${public_ip}/city")

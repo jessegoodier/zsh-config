@@ -49,11 +49,16 @@ path_add() {
 
 # Prefer Homebrew over /usr/bin (Apple jq, old git, …). Login shells: macOS
 # /etc/zprofile path_helper reorders PATH after this file; .zprofile undoes that.
-if [[ -x /opt/homebrew/bin/brew ]]; then
-	eval "$(/opt/homebrew/bin/brew shellenv)"
-elif [[ -x /usr/local/bin/brew ]]; then
-	eval "$(/usr/local/bin/brew shellenv)"
-fi
+# Linux: /home/linuxbrew/.linuxbrew or ~/.linuxbrew (same paths as installer.sh).
+() {
+	local p
+	for p in /opt/homebrew/bin/brew /usr/local/bin/brew "$HOME/.linuxbrew/bin/brew" /home/linuxbrew/.linuxbrew/bin/brew; do
+		if [[ -x $p ]]; then
+			eval "$("$p" shellenv)"
+			return
+		fi
+	done
+}
 
 # User-local bins stay ahead of brew so $HOME/bin, cargo, etc. can override.
 path_add \

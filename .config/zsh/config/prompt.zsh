@@ -48,7 +48,7 @@ git_prompt() {
 	(( VCS_STATUS_NUM_CONFLICTED )) && segments+=("⇠conflicts${VCS_STATUS_NUM_CONFLICTED}")
 	(( VCS_STATUS_STASHES )) && segments+=("${VCS_STATUS_STASHES}")
 	(( VCS_STATUS_NUM_STAGED + VCS_STATUS_NUM_UNSTAGED )) && segments+=("!$((VCS_STATUS_NUM_STAGED + VCS_STATUS_NUM_UNSTAGED))")
-	(( VCS_STATUS_NUM_UNTRACKED )) && segments+=("⇡untracked${VCS_STATUS_NUM_UNTRACKED}")
+	(( VCS_STATUS_NUM_UNTRACKED )) && segments+=("⇡${VCS_STATUS_NUM_UNTRACKED}")
 	(( $#segments )) && p+=" %B%F{red}[${(j. .)segments}]%f%b"
 
 

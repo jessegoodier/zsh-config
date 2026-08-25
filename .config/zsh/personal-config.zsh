@@ -4,8 +4,9 @@
 path_add \
 	"$HOME/go/bin" \
 	"$HOME/bin" \
-	/opt/homebrew/opt/grep/libexec/gnubin \
-    "$(brew --prefix)/share/google-cloud-sdk/bin"
+	"${HOMEBREW_PREFIX}/opt/grep/libexec/gnubin" \
+	"${HOMEBREW_PREFIX}/share/google-cloud-sdk/bin" \
+	"$HOME/.krew/bin"
 
 # --- Shell options ---
 setopt AUTO_CD
@@ -97,4 +98,5 @@ add-zsh-hook precmd _kube_prompt
 zsh-defer -c '_KUBE_PROMPT_READY=1; _kube_prompt; zle && zle reset-prompt'
 
 # --- Extra files (last so they can override) ---
+(( $+commands[direnv] )) && eval "$(direnv hook zsh)"
 [[ -f ~/.keys ]] && source ~/.keys
