@@ -174,7 +174,7 @@ collect_missing_tools() {
 	MISSING_CMDS=()
 	MISSING_FORMULAE=()
 	local spec cmd formula
-	for spec in git:git fzf:fzf eza:eza bat:bat fd:fd cargo:rust uv:uv; do
+	for spec in git:git fnm:fnm fzf:fzf eza:eza bat:bat fd:fd cargo:rust uv:uv; do
 		cmd=${spec%%:*}
 		formula=${spec#*:}
 		if ! (( $+commands[$cmd] )); then

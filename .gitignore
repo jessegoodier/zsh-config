@@ -160,7 +160,6 @@ activemq-data/
 
 # Environments
 .env
-.envrc
 .venv
 env/
 venv/
@@ -230,3 +229,4 @@ __marimo__/
 .kubeconfig
 .config/cursor.json
 .config/zsh/.zsh_sessions/
+.config/zsh/.zcompdump*

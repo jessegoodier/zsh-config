@@ -40,6 +40,7 @@ export EDITOR='vim'
 export VISUAL='vim'
 alias vi='vim'
 alias curl='noglob curl'
+export CLAUDE_CODE_DISABLE_MOUSE_CLICKS=1
 
 # --- fzf (search command only; theme/layout live in $XDG_CONFIG_HOME/fzf/config) ---
 export FZF_DEFAULT_COMMAND='fd --type f --strip-cwd-prefix --hidden --exclude .git'
