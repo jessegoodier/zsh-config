@@ -230,3 +230,4 @@ __marimo__/
 .kubeconfig
 .config/cursor.json
 .config/zsh/.zsh_sessions/
+.config/zsh/.zcompdump*
