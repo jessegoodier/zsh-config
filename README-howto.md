@@ -7,7 +7,7 @@ This repo is an XDG zsh setup: a tiny `$HOME/.zshenv` points zsh at `$XDG_CONFIG
 ```
 .zshenv                         →  $HOME/.zshenv          (sets ZDOTDIR)
 .config/zsh/.zshenv             →  env, PATH, path_add
-.config/zsh/.zshrc              →  plugins + modules + overlays
+.config/zsh/.zshrc              →  $ZDOTDIR/.zshrc; also $HOME/.zshrc (symlink)
 .config/zsh/plugins.zsh         →  clone/load plugins
 .config/zsh/config/*.zsh        →  prompt, history, keys, completion, aliases, fzf, functions
 .config/zsh/personal-config.zsh →  public overlay (kubectl, kube prompt, …)

@@ -1,5 +1,5 @@
 {
-    "search.followSymlinks": false,
+    "search.followSymlinks": true,
     "search.ripgrep.maxThreads": 3,
     "editor.tokenColorCustomizations": {
         "[Cobalt2]": {
@@ -19,8 +19,9 @@
         }
     },
     "scm.defaultViewMode": "tree",
-    "editor.fontFamily": "JetBrainsMono Nerd Font, Menlo, monospace",
-    "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font",
+    "editor.fontFamily": "'Fira Code', monospace",
+    "editor.fontLigatures": true,
+    "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font Mono",
     "terminal.integrated.letterSpacing": 1.2,
     "editor.letterSpacing": 0.6,
     "files.autoSave": "onFocusChange",

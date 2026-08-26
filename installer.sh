@@ -78,7 +78,7 @@ install_pair() {
 
 snapshot_shadowed() {
 	(( DID_WORK )) || return 0
-	local -a names=(.zshrc .zprofile .zlogin .zlogout)
+	local -a names=(.zprofile .zlogin .zlogout)
 	local name dest bdest any=0
 	for name in $names; do
 		dest="$HOME/$name"
@@ -386,6 +386,8 @@ for src in "$REPO_ROOT/.config"/*(N); do
 	[[ ${src:t} == .DS_Store ]] && continue
 	install_pair "$src" "$HOME/.config/${src:t}"
 done
+
+install_pair "$REPO_ROOT/.config/zsh/.zshrc" "$HOME/.zshrc"
 snapshot_shadowed
 import_zsh_history
 install_python_venv

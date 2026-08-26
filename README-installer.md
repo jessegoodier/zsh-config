@@ -47,11 +47,14 @@ Run the script; do not `source` it.
 | Repo path | Home path |
 | --------- | --------- |
 | `.zshenv` | `~/.zshenv` |
+| `.config/zsh/.zshrc` | `~/.zshrc` |
 | each top-level entry under `.config/` | `~/.config/<name>` |
 
 Today that `.config/` set is `cspell`, `fzf`, `fzf-git`, `yazi`, `zsh`, and `zsh-patina`. New top-level entries are picked up automatically.
 
 `$HOME/.zshenv` must be this repo’s file (or a copy of it). zsh only reads `$ZDOTDIR/.zshenv` automatically when `ZDOTDIR` is already set; this file sets it, then sources `$ZDOTDIR/.zshenv`.
+
+`~/.zshrc` is a convenience symlink to the same file zsh loads as `$ZDOTDIR/.zshrc`. `ln -s` is the same on macOS and Linux; after `ZDOTDIR` is set, zsh does not also source `~/.zshrc`, so there is no double-load.
 
 ## Python venv
 
@@ -104,7 +107,7 @@ backups/2026-08-25_113145/
 
 If that timestamp already exists, the directory name gets `_<pid>` appended. Dated folders are gitignored so a user’s old config (and any secrets in it) is not committed.
 
-Files this installer does not replace, but that zsh will stop reading once `ZDOTDIR` is set, are **copied** (not moved) into the same folder when the installer actually links something: `~/.zshrc`, `~/.zprofile`, `~/.zlogin`, `~/.zlogout`.
+Files this installer does not replace, but that zsh will stop reading once `ZDOTDIR` is set, are **copied** (not moved) into the same folder when the installer actually links something: `~/.zprofile`, `~/.zlogin`, `~/.zlogout`.
 
 `MANIFEST.txt` lists `MOVED` / `COPIED` / `SKIPPED` / `LINKED` with source and destination.
 
