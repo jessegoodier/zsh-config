@@ -38,8 +38,8 @@ git_prompt() {
 	(( $#ref > 32 )) && ref[13,-13]="…"
 
 	local p="%F{green}󰘬 ${ref//\%/%%}%f"
-	(( VCS_STATUS_COMMITS_BEHIND )) && p+=" %F{cyan}⇡${VCS_STATUS_COMMITS_BEHIND}%f"
-	(( VCS_STATUS_COMMITS_AHEAD )) && p+=" %F{yellow}⇣${VCS_STATUS_COMMITS_AHEAD}%f"
+	(( VCS_STATUS_COMMITS_BEHIND )) && p+=" %F{cyan}⇣${VCS_STATUS_COMMITS_BEHIND}%f"
+	(( VCS_STATUS_COMMITS_AHEAD )) && p+=" %F{yellow}⇡${VCS_STATUS_COMMITS_AHEAD}%f"
 	(( VCS_STATUS_PUSH_COMMITS_BEHIND )) && p+=" %F{cyan}⇠${VCS_STATUS_PUSH_COMMITS_BEHIND}%f"
 	(( VCS_STATUS_PUSH_COMMITS_AHEAD )) && p+=" %F{yellow}⇢${VCS_STATUS_PUSH_COMMITS_AHEAD}%f"
 
@@ -48,7 +48,7 @@ git_prompt() {
 	local -a segments
 	[[ -n $VCS_STATUS_ACTION ]] && segments+=("action${VCS_STATUS_ACTION}")
 	(( VCS_STATUS_NUM_CONFLICTED )) && segments+=("⇠conflicts${VCS_STATUS_NUM_CONFLICTED}")
-	(( VCS_STATUS_NUM_STAGED + VCS_STATUS_NUM_UNSTAGED )) && segments+=("!$((VCS_STATUS_NUM_STAGED + VCS_STATUS_NUM_UNSTAGED))")
+	(( VCS_STATUS_NUM_STAGED + VCS_STATUS_NUM_UNSTAGED )) && segments+=("chngs:$((VCS_STATUS_NUM_STAGED + VCS_STATUS_NUM_UNSTAGED))")
 	(( VCS_STATUS_NUM_UNTRACKED )) && segments+=("⇡${VCS_STATUS_NUM_UNTRACKED}")
 	(( $#segments )) && p+=" %B%F{red}[${(j. .)segments}]%f%b"
 
