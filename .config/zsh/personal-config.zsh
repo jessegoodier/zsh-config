@@ -6,7 +6,11 @@ path_add \
 	"$HOME/bin" \
 	"${HOMEBREW_PREFIX}/opt/grep/libexec/gnubin" \
 	"${HOMEBREW_PREFIX}/share/google-cloud-sdk/bin" \
-	"$HOME/.krew/bin"
+	"$HOME/.krew/bin" \
+	"/opt/homebrew/opt/llvm/bin" \
+
+export LDFLAGS="-L/opt/homebrew/opt/llvm/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
 
 # --- Shell options ---
 setopt AUTO_CD
