@@ -2,6 +2,7 @@ alias bob='bobide'
 alias bobcli="${HOMEBREW_PREFIX}/bin/bob"
 alias bobshell="${HOMEBREW_PREFIX}/bin/bob"
 alias brewup='brew update && brew upgrade -y'
+alias c=clear
 alias cursor='cursor --classic'
 alias deit='docker exec -i -t'
 alias df='df -h'
@@ -26,23 +27,22 @@ alias kgep='kubectl get endpointslices'
 alias kgevents="kubectl get events --sort-by='.metadata.creationTimestamp'"
 alias kgeventsw="kubectl get events --sort-by='.metadata.creationTimestamp' -w"
 alias kgnol='kubectl get nodes --show-labels'
-alias kgsts="kubectl get sts"
 export BAT_PAGER='less -R'
 export LESS='-R'
 export PAGER=less
 unalias hin 2>/dev/null
 unalias hun 2>/dev/null
 unalias hup 2>/dev/null
+alias kgsts="kubectl get sts"
 alias krrsts='kubectl rollout restart sts'
 alias md='mkdir -p'
 alias pre-commit-all='pre-commit run --all-files'
 alias sts='aws sts get-caller-identity'
-alias ta='tmux attach'
 alias -- -='cd -'
+alias ta='tmux attach'
 alias tkill='tmux kill-server'
 alias tks='tmux kill-session -t'
 alias tl='tmux list-sessions'
 alias tree='eza --tree --icons=auto'
 alias whatsmyip='curl -s -X GET -4 https://ifconfig.co'
 alias zr='exec zsh'
-alias c=clear

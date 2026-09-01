@@ -19,6 +19,7 @@ appuser
 apscheduler
 argparse
 arke
+artifacthub
 asgi
 assertionvalues
 asyncio
@@ -145,6 +146,7 @@ esac
 estree
 executemany
 executescript
+execvp
 exonum
 expandtab
 extrasaction
@@ -153,6 +155,7 @@ fargate
 fastapi
 fastmcp
 feder
+filetree
 filterwarnings
 finops
 finopsagent
@@ -173,6 +176,7 @@ gccl
 gcflags
 gcloud
 genai
+getenv
 getpreferredencoding
 ghostwhite
 gimu
@@ -453,6 +457,7 @@ stackwatch
 starlette
 statefulset
 statefulsets
+stdlib
 storageclass
 streamable
 subchart
