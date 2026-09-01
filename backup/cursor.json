@@ -19,7 +19,7 @@
         }
     },
     "scm.defaultViewMode": "tree",
-    "editor.fontFamily": "'Fira Code', monospace",
+    "editor.fontFamily": "JetBrainsMono Nerd Font Mono, monospace",
     "editor.fontLigatures": true,
     "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font Mono",
     "terminal.integrated.letterSpacing": 1.2,

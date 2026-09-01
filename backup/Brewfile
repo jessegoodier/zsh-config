@@ -1,18 +1,19 @@
 tap "alielsokary/tap"
 tap "apptio-pne/prism-arke", "git@github.com:Apptio-PNE/homebrew-arke.git"
 tap "apptio-pne/tools"
-tap "aws/tap"
-tap "azure/kubelogin"
+tap "aws/tap", trusted: true
+tap "azure/kubelogin", trusted: true
+tap "common-fate/granted"
 tap "giammarco-ferranti/deja", "https://github.com/Giammarco-Ferranti/homebrew-deja"
 tap "janosmiko/tap"
-tap "jessegoodier/kdebug"
-tap "jessegoodier/kge"
-tap "jessegoodier/kpf"
-tap "jessegoodier/kutils"
-tap "mfuentesg/tap"
+tap "jessegoodier/kdebug", trusted: true
+tap "jessegoodier/kge", trusted: true
+tap "jessegoodier/kpf", trusted: true
+tap "jessegoodier/kutils", trusted: true
+tap "mfuentesg/tap", trusted: true
 tap "norwoodj/tap"
-tap "replicatedhq/replicated"
-tap "skyhook-io/tap"
+tap "replicatedhq/replicated", trusted: true
+tap "skyhook-io/tap", trusted: true
 # GitOps Continuous Delivery for Kubernetes
 brew "argocd"
 # Simple API client (Postman-like) in your terminal
@@ -99,6 +100,8 @@ brew "eza"
 brew "fd"
 # I/O benchmark and stress test
 brew "fio"
+# Command-line outline and bitmap font editor/converter
+brew "fontforge"
 # Command-line fuzzy finder written in Go
 brew "fzf"
 # GNU compiler collection
@@ -107,6 +110,8 @@ brew "gcc"
 brew "gh"
 # Distributed revision control system
 brew "git"
+# Syntax-highlighting pager for git and diff output
+brew "git-delta"
 # Quickly rewrite git repository history
 brew "git-filter-repo"
 # Audit git repos for secrets
@@ -119,12 +124,16 @@ brew "go"
 brew "goreleaser"
 # Ping, but with a graph
 brew "gping"
+# Easiest way to access your cloud
+brew "granted"
 # Graph visualization software from AT&T and Bell Labs
 brew "graphviz"
 # GNU grep, egrep and fgrep
 brew "grep"
 # Kubernetes package manager
 brew "helm"
+# Language server for Helm
+brew "helm-ls"
 # Tools and libraries to manipulate images in select formats
 brew "imagemagick"
 # Istio configuration command-line utility
@@ -135,6 +144,8 @@ brew "jq"
 brew "jqp"
 # Handy way to save and run project-specific commands
 brew "just"
+# Language server for just
+brew "just-lsp"
 # Modern load testing tool, using Go and JavaScript
 brew "k6"
 # Kubernetes CLI To Manage Your Clusters In Style!
@@ -245,8 +256,8 @@ brew "skopeo"
 brew "stern"
 # Code-search similar to ack
 brew "the_silver_searcher"
-# Modern reverse proxy
-brew "traefik"
+# Terminal multiplexer
+brew "tmux"
 # Vulnerability scanner for container images, file systems, and Git repos
 brew "trivy"
 # Find and verify credentials
@@ -261,6 +272,8 @@ brew "virtctl"
 brew "watch"
 # Internet file retriever
 brew "wget"
+# Blazing fast terminal file manager written in Rust, based on async I/O
+brew "yazi"
 # Process YAML, JSON, XML, CSV and properties documents from the CLI
 brew "yq"
 # Shell extension to navigate your filesystem faster
@@ -269,18 +282,38 @@ brew "zoxide"
 brew "zsh-autosuggestions"
 # Fish shell like syntax highlighting for zsh
 brew "zsh-syntax-highlighting"
+# Arke — agentic sidecar for the Prism platform
+brew "apptio-pne/prism-arke/arke"
+# Install the trusted certificates for Apptio
+brew "apptio-pne/tools/apptio-certs", trusted: true
+# eks-node-viewer is a tool for visualizing dynamic node usage within an EKS cluster.
+brew "aws/tap/eks-node-viewer", trusted: true
+# A Kubernetes credential (exec) plugin implementing azure authentication
+brew "azure/kubelogin/kubelogin", trusted: true
+# Predictive inline shell autosuggestions for zsh.
+brew "giammarco-ferranti/deja/deja", trusted: true
+# Lightning Fast Kubernetes navigator - keyboard-focused TUI for managing K8s clusters
+brew "janosmiko/tap/lfk", trusted: true
+# Universal Kubernetes Debug Container Utility
+brew "jessegoodier/kdebug/kdebug"
 # Kubernetes utility to improve kubectl port-forward reliability and usability
 brew "jessegoodier/kpf/kpf", trusted: true
+# kubectl get pods with color-coded status and last restart reason
+brew "jessegoodier/kutils/kgc", trusted: true
+# List Kubernetes PersistentVolumes with PVCs, pods, zones, and sizes
+brew "jessegoodier/kutils/kgpv", trusted: true
+# ksd` is a tool, whose aim is help you to visualize in text plain your kubernetes secrets, either `yaml` or `json` outputs.
+brew "mfuentesg/tap/ksd", trusted: true
+# Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface.
+brew "replicatedhq/replicated/cli", trusted: true
+# Modern Kubernetes visibility — topology, traffic, and Helm management
+brew "skyhook-io/tap/radar", trusted: true
 # Command-line interface for 1Password
 cask "1password-cli"
-# Enable Windows-like alt-tab
-cask "alt-tab"
 # Display management tool
 cask "betterdisplay"
 # Native GUI for Homebrew casks
 cask "caskhub"
-# OpenAI's official browser with ChatGPT built in
-cask "chatgpt-atlas"
 # OpenAI's coding agent that runs in your terminal
 cask "codex"
 # Universal database tool and SQL client
@@ -316,6 +349,8 @@ cask "postman"
 cask "radar-desktop"
 # Virtualization tool
 cask "virtualbuddy"
+# Menu bar toolkit with keep-awake, system monitor and volume mixer
+cask "vorssaint"
 vscode "akamud.vscode-theme-onedark"
 vscode "alefragnani.project-manager"
 vscode "anseki.vscode-color"
@@ -354,6 +389,7 @@ vscode "liamdawson.jsonnet-language"
 vscode "m4ns0ur.base64"
 vscode "marcostazi.vs-code-vagrantfile"
 vscode "mechatroner.rainbow-csv"
+vscode "meta.pyrefly"
 vscode "miguelsolorio.fluent-icons"
 vscode "ms-azuretools.vscode-containers"
 vscode "ms-azuretools.vscode-docker"
@@ -382,7 +418,6 @@ vscode "oderwat.indent-rainbow"
 vscode "openai.chatgpt"
 vscode "redhat.vscode-yaml"
 vscode "sitoi.ai-commit"
-vscode "sryze.uridecode"
 vscode "streetsidesoftware.code-spell-checker"
 vscode "streetsidesoftware.code-spell-checker-cspell-bundled-dictionaries"
 vscode "tamasfe.even-better-toml"
@@ -413,6 +448,7 @@ uv "kdebug"
 uv "kge-kubectl-get-events"
 uv "kgng"
 uv "mcp-kubecost"
+uv "paloaltokeepalive"
 uv "pre-commit"
 uv "pyrefly"
 krew "config-cleanup"
