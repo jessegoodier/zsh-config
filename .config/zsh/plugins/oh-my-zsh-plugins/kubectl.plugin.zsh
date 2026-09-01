@@ -14,10 +14,11 @@ alias kca='_kca(){ kubectl "$@" --all-namespaces;  unset -f _kca; }; _kca'
 alias kaf='kubectl apply -f'
 
 # Apply a kustomization directory
-alias kapk='kubectl apply -k'
+alias kak='kubectl apply -k'
 
 # Drop into an interactive terminal on a container
 alias keti='kubectl exec -t -i'
+alias keit='kubectl exec -t -i'
 
 # Manage configuration quickly to switch contexts between local, dev ad staging.
 alias kcuc='kubectl config use-context'
