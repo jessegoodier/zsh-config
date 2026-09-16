@@ -1,3 +1,4 @@
+alias kgee='kubectl get events --sort-by=lastTimestamp --field-selector type!=Normal'
 alias bob='bobide'
 alias bobcli="${HOMEBREW_PREFIX}/bin/bob"
 alias bobshell="${HOMEBREW_PREFIX}/bin/bob"

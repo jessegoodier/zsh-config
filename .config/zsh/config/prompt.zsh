@@ -2,14 +2,13 @@
 #   1. Where am I?                           → PATH_INFO
 #   2. What Git context am I in?             → GIT_INFO (branch/tag/HEAD)
 #   3. Is the repo in a notable state?       → 󰁅pull 󰁝push and 󰐕󰏫󰝒 counts
-#   4. Did my last command fail / take long? → CMD_STATUS + CMD_DURATION
+#   4. Did my last command fail?             → CMD_STATUS
 #
 # Overlay may set KUBE_INFO as an optional prefix; the core leaves it empty.
 #
-typeset -g PATH_INFO GIT_INFO KUBE_INFO CMD_STATUS CMD_DURATION
+typeset -g PATH_INFO GIT_INFO KUBE_INFO CMD_STATUS
 typeset -g _LAST_PWD
 typeset -g _GITSTATUS_READY=0
-typeset -g _PROMPT_START_TIME
 setopt PROMPT_SUBST
 
 # Start the daemon only once, after the shell is interactive
@@ -78,31 +77,10 @@ _gitstatus_async_update() {
 	_LAST_PATH_INFO=$PATH_INFO
 }
 
-preexec() {
-	_PROMPT_START_TIME=$SECONDS
-}
-
 precmd() {
 	local st=$?
 	CMD_STATUS=${${st:#0}:+%F{red}➜%f}
 	CMD_STATUS=${CMD_STATUS:-%F{magenta}➜%f}
-
-	# Duration
-	CMD_DURATION=
-	if (( ${+_PROMPT_START_TIME} )); then
-		local -i sec=$(( SECONDS - _PROMPT_START_TIME ))
-		unset _PROMPT_START_TIME
-
-		if (( sec >= 2 )); then
-			if (( sec >= 60 )); then
-				local -i m=$(( sec / 60 ))
-				local -i s=$(( sec % 60 ))
-				CMD_DURATION="%F{yellow}${m}m${s}s%f"
-			else
-				CMD_DURATION="%F{yellow}${sec}s%f"
-			fi
-		fi
-	fi
 
 	# Pure async – never blocks the prompt
 	if (( _GITSTATUS_READY )); then
@@ -114,4 +92,4 @@ precmd() {
 }
 
 PROMPT=$'\n${KUBE_INFO}%B%F{blue}${PATH_INFO}%f%b ${GIT_INFO}\n${CMD_STATUS} '
-RPROMPT='${CMD_DURATION}'
+RPROMPT=

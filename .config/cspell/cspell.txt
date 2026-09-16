@@ -66,6 +66,7 @@ chargeback
 cheatsheets
 chsh
 cicd
+CIMD
 cldy
 clickhouse
 cliffcolvin
@@ -85,6 +86,7 @@ compoundflag
 compreply
 conds
 configmap
+conntrack
 containerd
 containerimage
 containerregistry
@@ -102,6 +104,7 @@ coverallsapp
 cpureq
 cpuused
 crds
+creds
 cspellcache
 csvfile
 curlimages
@@ -175,6 +178,7 @@ fyre
 gccl
 gcflags
 gcloud
+geico
 genai
 getenv
 getpreferredencoding
@@ -204,6 +208,7 @@ healthz
 helmignore
 helmscan
 highmem
+HMAC
 home
 hostnames
 http
@@ -270,6 +275,7 @@ kubecostwrite
 kubectl
 kubectx
 kubelet
+kubemodel
 kubernetes
 kubescaler
 kubeseal
@@ -322,6 +328,7 @@ mysecret
 myusername
 namespace
 nasc
+netfilter
 networkinsight
 networkinsights
 nginxinc
@@ -336,6 +343,7 @@ nonprod
 nonroot
 nopasswd
 noreply
+nosniff
 numpy
 nvim
 objstore
@@ -402,6 +410,7 @@ pyyaml
 quantileofaverages
 quantileofmaxes
 rclone
+rctesting
 readyz
 redirections
 referer
@@ -415,6 +424,7 @@ replicaset
 replicasets
 replicationcontrollers
 reserialized
+résumé
 rgba
 richprint
 rightsizer
@@ -423,9 +433,9 @@ rollup
 rprint
 rprompt
 rrdatas
+rstrip
 ruamel
 runid
-résumé
 sapt
 scipy
 sdist
@@ -446,6 +456,7 @@ sidecar
 signoz
 sigv
 singlepod
+sitecustomize
 skopeo
 smartcase
 sonoma

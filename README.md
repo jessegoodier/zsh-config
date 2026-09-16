@@ -29,7 +29,7 @@ The configuration is fully modular, deliberately minimal, and built so that ever
   Deferred plugin loading (`zsh-defer`), lazy-loaded functionality, cached completions (`ez-compinit`), and a non-blocking prompt.
 
 - **Minimal native prompt**
-  Smart path truncation, real-time Git status, command duration, and command state. No external prompt frameworks. The overlay may prefix kube context via `KUBE_INFO`.
+  Smart path truncation, real-time Git status, and command state. No external prompt frameworks. The overlay may prefix kube context via `KUBE_INFO`.
 
 - **Enhanced completions**
   Interactive `fzf-tab` menu with extra completions from `zsh-completions`.
