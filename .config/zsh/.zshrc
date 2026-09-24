@@ -10,7 +10,15 @@ for f in $configs; do
 	[[ -r "$ZSH_CONFIG_DIR/$f.zsh" ]] && source "$ZSH_CONFIG_DIR/$f.zsh"
 done
 
-[[ -r $HOME/.venv/bin/activate ]] && source "$HOME/.venv/bin/activate"
+# Global tools from ~/.venv stay on PATH, but do not `activate` (that sets
+# VIRTUAL_ENV and makes uv ignore a project .venv). Prefer the cwd venv when
+# present so VS Code/direnv/uv all see the same environment.
+if [[ -d $HOME/.venv/bin ]]; then
+	path=($HOME/.venv/bin $path)
+fi
+if [[ -r $PWD/.venv/bin/activate ]]; then
+	source "$PWD/.venv/bin/activate"
+fi
 
 # Load personal overlay last (optional). Private secrets stay out of git.
 [[ -r $ZDOTDIR/personal-config.zsh ]] && source "$ZDOTDIR/personal-config.zsh"

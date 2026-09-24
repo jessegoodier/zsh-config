@@ -105,6 +105,7 @@ cpureq
 cpuused
 crds
 creds
+CRRS
 cspellcache
 csvfile
 curlimages
@@ -159,6 +160,7 @@ fastapi
 fastmcp
 feder
 filetree
+Filterless
 filterwarnings
 finops
 finopsagent
@@ -495,6 +497,7 @@ tsbuildinfo
 tsdb
 turbonomic
 turndownschedules
+twistlock
 typecheck
 typedoc
 tzdata
