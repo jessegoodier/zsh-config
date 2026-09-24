@@ -15,15 +15,15 @@ plugin-path() {
 	# Clone the plugin if it's not installed
 	if [[ ! -d "$dir" ]]; then
 		mkdir -p "$ZSH_PLUGIN_DIR" || return 1
-		print -u2 -P "==> Installing %F{cyan}$repo%f..."
+		print -u2 -P "→ ${(r:29:)repo} %F{cyan}installing...%f"
 
 		if ! git clone --depth=1 --quiet \
 			"https://github.com/$owner/$repo" "$dir"; then
 			rm -rf "$dir"
-			print -u2 -P "%F{red}✗ Failed to install $repo%f"
+			print -u2 -P "→ ${(r:29:)repo} %F{red}✗ clone failed%f"
 			return 1
 		fi
-		print -u2 -P "%F{green}✓ Installed $repo%f"
+		print -u2 -P "→ ${(r:29:)repo} %F{green}✓ installed%f"
 	fi
 
 	# Prefer the conventional entry points
@@ -45,7 +45,7 @@ plugin-path() {
 		return 0
 	fi
 
-	print -u2 -P "%F{red}Missing plugin entry:%f $dir"
+	print -u2 -P "→ ${(r:29:)repo} %F{red}✗ missing plugin entry%f ($dir)"
 	return 1
 }
 
@@ -53,40 +53,41 @@ plugin-path() {
 # A fast syntax highlighter written in Rust
 load-zsh-patina() {
 	emulate -L zsh
-	local dir="$ZSH_PLUGIN_DIR/zsh-patina"
+	local name=zsh-patina
+	local dir="$ZSH_PLUGIN_DIR/$name"
 
 	# Clone on first use
 	if [[ ! -d "$dir" ]]; then
-		print -u2 -P "==> Installing %F{cyan}zsh-patina%f..."
+		print -u2 -P "→ ${(r:29:)name} %F{cyan}installing...%f"
 		if ! git clone --depth=1 --quiet \
 			https://github.com/michel-kraemer/zsh-patina.git "$dir"; then
 			rm -rf "$dir"
-			print -u2 -P "%F{red}✗ Failed to clone zsh-patina%f"
+			print -u2 -P "→ ${(r:29:)name} %F{red}✗ clone failed%f"
 			return 1
 		fi
-		print -u2 -P "%F{green}✓ Cloned zsh-patina%f"
+		print -u2 -P "→ ${(r:29:)name} %F{green}✓ installed%f"
 	fi
 
 	# Build the binary if it is missing
 	if [[ ! -x $ZSH_PATINA_PATH ]]; then
 		if ! (( $+commands[cargo] )); then
-			print -u2 -P "%F{red}zsh-patina binary not found at $ZSH_PATINA_PATH%f"
-			print -u2 -P "Install Rust from https://rustup.rs and then run:"
+			print -u2 -P "→ ${(r:29:)name} %F{yellow}⚠ cargo is missing%f"
+			print -u2 -P "  Install Rust from https://rustup.rs and then run:"
 			print -u2 -P "  (cd $dir && cargo build --release)"
 			return 1
 		fi
 
-		print -u2 -P "==> Building %F{cyan}zsh-patina%f..."
+		print -u2 -P "→ ${(r:29:)name} %F{cyan}building...%f"
 		if ! (cd "$dir" && env -u CARGO_TARGET_DIR cargo build --release --quiet); then
-			print -u2 -P "%F{red}✗ Failed to build zsh-patina%f"
+			print -u2 -P "→ ${(r:29:)name} %F{red}✗ build failed%f"
 			return 1
 		fi
-		print -u2 -P "%F{green}✓ Built zsh-patina%f"
+		print -u2 -P "→ ${(r:29:)name} %F{green}✓ built%f"
 	fi
 
 	# Final sanity check
 	if [[ ! -x $ZSH_PATINA_PATH ]]; then
-		print -u2 -P "%F{red}zsh-patina binary still not found at $ZSH_PATINA_PATH%f"
+		print -u2 -P "→ ${(r:29:)name} %F{red}✗ binary not found at $ZSH_PATINA_PATH%f"
 		return 1
 	fi
 
@@ -101,55 +102,60 @@ load-zsh-patina() {
 	fi
 }
 
-# Update all installed plugin repositories
+# Update all installed plugin repositories in parallel
 update-plugin() {
 	emulate -L zsh
-	local dir old new
+	setopt localoptions nomonitor
 
-	# Iterate over plugin directories only
-	for dir in "$ZSH_PLUGIN_DIR"/*(/); do
+	local -a plugins=("$ZSH_PLUGIN_DIR"/*(/N))
+	(( $#plugins )) || {
+		print -P "%F{yellow}No plugins found in $ZSH_PLUGIN_DIR%f"
+		return 0
+	}
+
+	print -P "%F{cyan}Updating ${#plugins} plugins...%f"
+
+	local dir name
+	for dir in $plugins; do
 		[[ -d "$dir/.git" ]] || continue
-		old=$(git -C "$dir" rev-parse HEAD 2>/dev/null) || continue
-		printf "%-32s" "${dir:t}"
+		name=${dir:t}
 
-		# Fetch once
-		if ! git -C "$dir" fetch --depth=1 --quiet origin; then
-			print -u2 -P "%F{red}✗ Failed to update%f"
-			continue
-		fi
+		(
+			local old new
+			old=$(git -C "$dir" rev-parse HEAD 2>/dev/null) || {
+				print -P "⎔ ${(r:29:)name} %F{red}✗ not a valid git repo%f"
+				exit 1
+			}
 
-		# Prefer clean fast-forward, fall back to hard reset
-		if git -C "$dir" merge --ff-only --quiet FETCH_HEAD 2>/dev/null ||
-			git -C "$dir" reset --hard --quiet FETCH_HEAD; then
-		    new=$(git -C "$dir" rev-parse HEAD)
+			if ! git -C "$dir" fetch --depth=1 --quiet origin 2>/dev/null; then
+				print -P "⎔ ${(r:29:)name} %F{red}✗ fetch failed%f"
+				exit 1
+			fi
+
+			# Prefer clean fast-forward, fall back to hard reset
+			if ! git -C "$dir" merge --ff-only --quiet FETCH_HEAD 2>/dev/null &&
+				! git -C "$dir" reset --hard --quiet FETCH_HEAD 2>/dev/null; then
+				print -P "⎔ ${(r:29:)name} %F{red}✗ update failed%f"
+				exit 1
+			fi
+
+			new=$(git -C "$dir" rev-parse HEAD)
 			if [[ $old == $new ]]; then
-				print -P "%F{8}○ Already up to date%f"
+				print -P "⎔ ${(r:29:)name} %F{8}○ already up to date%f"
+			elif [[ $name != zsh-patina ]]; then
+				print -P "⎔ ${(r:29:)name} %F{green}✓ updated%f"
+			elif ! (( $+commands[cargo] )); then
+				print -P "⎔ ${(r:29:)name} %F{yellow}⚠ updated, but cargo is missing%f"
+			elif (cd "$dir" && env -u CARGO_TARGET_DIR cargo build --release --quiet); then
+				print -P "⎔ ${(r:29:)name} %F{green}✓ updated & rebuilt%f"
 			else
-				_update_plugin_success "$dir"
+				print -P "⎔ ${(r:29:)name} %F{yellow}⚠ updated, but rebuild failed%f"
 			fi
-		else
-			print -u2 -P "%F{red}✗ Failed to update%f"
-		fi
+		) &
 	done
-}
+	wait
 
-# Helper to avoid repeating the success / rebuild logic
-_update_plugin_success() {
-	local dir=$1
-	case ${dir:t} in
-		zsh-patina)
-			if ! (( $+commands[cargo] )); then
-				print -P "%F{yellow}⚠ Updated, but cargo is missing%f"
-			elif (cd "$dir" && cargo build --release --quiet); then
-				print -P "%F{green}✓ Updated & rebuilt%f"
-			else
-				print -P "%F{yellow}⚠ Updated, but rebuild failed%f"
-			fi
-			;;
-		*)
-			print -P "%F{green}✓ Updated%f"
-			;;
-	esac
+	print -P "%F{green}Done.%f"
 }
 
 # Install every plugin now
