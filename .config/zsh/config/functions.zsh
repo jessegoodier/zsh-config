@@ -79,6 +79,7 @@ fnm-on() {
 }
 
 # Extract one or more archive files based on their extension
+# (format list adapted from https://github.com/xvoland/Extract)
 extract() {
 	if [[ "$1" == "help" || "$1" == "-h" || -z "$1" ]]; then
 		echo "${C_CYAN}📦 extract${C_NC}: Universal archive extractor (supports multiple files)."
@@ -86,28 +87,55 @@ extract() {
 		return 0
 	fi
 
+	local file mnt rc=0
 	for file in "$@"; do
-		if [ -f "$file" ] ; then
-			echo "${C_CYAN}Extracting '$file'...${C_NC}"
-			case "$file" in
-				*.tar.bz2)   tar xjf "$file"     ;;
-				*.tar.gz)    tar xzf "$file"     ;;
-				*.bz2)       bunzip2 "$file"     ;;
-				*.rar)       unrar x "$file"     ;;
-				*.gz)        gunzip "$file"      ;;
-				*.tar)       tar xf "$file"      ;;
-				*.tbz2)      tar xjf "$file"     ;;
-				*.tgz)       tar xzf "$file"     ;;
-				*.zip)       unzip "$file"       ;;
-				*.Z)         uncompress "$file"  ;;
-				*.7z)        7z x "$file"        ;;
-				*)           echo "${C_RED}❌ '$file' cannot be extracted via extract().${C_NC}" ;;
-			esac
-		else
+		if [[ ! -f "$file" ]]; then
 			echo "${C_RED}❌ '$file' is not a valid file.${C_NC}"
+			rc=1
+			continue
 		fi
+
+		echo "${C_CYAN}Extracting '$file'...${C_NC}"
+		# Compound tar suffixes must precede their single-compression counterparts
+		case "$file" in
+			*.tar.lz4)   tar --use-compress-program=lz4 -xvf "$file" ;;
+			*.tar.br)    tar --use-compress-program=brotli -xvf "$file" ;;
+			*.tar.zst)   tar --use-compress-program=zstd -xvf "$file" ;;
+			*.tar|*.tar.bz2|*.tar.gz|*.tar.xz|*.tbz2|*.tgz|*.txz|*.cbt)
+			             tar -xvf "$file" ;;
+			*.bz2)       bunzip2 "$file" ;;
+			*.gz)        gunzip "$file" ;;
+			*.xz)        unxz "$file" ;;
+			*.lzma)      unlzma "$file" ;;
+			*.lz4)       lz4 -d "$file" ;;
+			*.zst)       zstd -d "$file" ;;
+			*.Z)         uncompress "$file" ;;
+			*.rar|*.cbr) unrar x -ad "$file" ;;
+			*.zip|*.cbz|*.epub)
+			             unzip "$file" ;;
+			*.7z|*.apk|*.arj|*.cab|*.cb7|*.chm|*.deb|*.iso|*.lzh|*.msi|*.pkg|*.rpm|*.udf|*.wim|*.xar|*.vhd)
+			             7z x "$file" ;;
+			*.exe)       cabextract "$file" ;;
+			*.cpio)      cpio -id <"$file" ;;
+			*.ace|*.cba) unace x "$file" ;;
+			*.zpaq)      zpaq x "$file" ;;
+			*.arc)       arc e "$file" ;;
+			*.appimage|*.AppImage)
+			             "${file:A}" --appimage-extract ;;
+			*.dmg)
+				mnt=$(mktemp -d) && hdiutil attach "$file" -mountpoint "$mnt" &&
+					echo "Mounted at ${C_YELLOW}$mnt${C_NC} (detach with: hdiutil detach \"$mnt\")"
+				;;
+			*)
+				echo "${C_RED}❌ '$file' cannot be extracted via extract().${C_NC}"
+				rc=1
+				continue
+				;;
+		esac || { echo "${C_RED}❌ Failed to extract '$file'.${C_NC}"; rc=1; }
 	done
-	echo "${C_GREEN}✅ Extraction complete!${C_NC}"
+
+	(( rc == 0 )) && echo "${C_GREEN}✅ Extraction complete!${C_NC}"
+	return $rc
 }
 
 # Inspect a port and optionally terminate the process using it

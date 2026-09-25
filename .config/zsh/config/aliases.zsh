@@ -1,4 +1,3 @@
-alias kgee='kubectl get events --sort-by=lastTimestamp --field-selector type!=Normal'
 alias bob='bobide'
 alias bobcli="${HOMEBREW_PREFIX}/bin/bob"
 alias bobshell="${HOMEBREW_PREFIX}/bin/bob"
@@ -24,6 +23,7 @@ alias kdelsts="kubectl delete sts"
 alias kdpi="kubectl get pods -o jsonpath='{.items[*].spec.containers[*].image}' | tr -s '[[:space:]]' '\n' | sort -u"
 alias kests='kubectl edit sts'
 alias kg='kubectl get'
+alias kgee='kubectl get events --sort-by=lastTimestamp --field-selector type!=Normal'
 alias kgep='kubectl get endpointslices'
 alias kgevents="kubectl get events --sort-by='.metadata.creationTimestamp'"
 alias kgeventsw="kubectl get events --sort-by='.metadata.creationTimestamp' -w"
@@ -46,4 +46,5 @@ alias tks='tmux kill-session -t'
 alias tl='tmux list-sessions'
 alias tree='eza --tree --icons=auto'
 alias whatsmyip='curl -s -X GET -4 https://ifconfig.co'
+alias x='extract'
 alias zr='exec zsh'

@@ -93,3 +93,4 @@ precmd() {
 
 PROMPT=$'\n${KUBE_INFO}%B%F{blue}${PATH_INFO}%f%b ${GIT_INFO}\n${CMD_STATUS} '
 RPROMPT=
+PROMPT_EOL_MARK='↩'
