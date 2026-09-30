@@ -1,0 +1,6 @@
+# Valid commands use ANSI green to match %F{green} in the prompt (git branch).
+"variable.function" = "green"
+"dynamic.callable" = "green"
+
+[metadata]
+extends = "patina"
