@@ -232,3 +232,5 @@ __marimo__/
 .config/zsh/.zsh_sessions/
 .config/zsh/.zcompdump*
 claude.sh
+.key*
+.gitconfig
