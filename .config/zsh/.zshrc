@@ -28,3 +28,7 @@ fi
 # first functions.zsh source and would win (aliases shadow functions).
 # Re-apply after those tasks. Private overlay is not re-sourced here.
 zsh-defer -c "[[ -r $ZSH_CONFIG_DIR/functions.zsh ]] && source $ZSH_CONFIG_DIR/functions.zsh"
+
+if [[ -d $HOME/.git-ai/bin ]]; then
+	path=($HOME/.git-ai/bin $path)
+fi

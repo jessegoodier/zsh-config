@@ -1,7 +1,7 @@
 alias bob='bobide'
 alias bobcli="${HOMEBREW_PREFIX}/bin/bob"
 alias bobshell="${HOMEBREW_PREFIX}/bin/bob"
-alias brewup='brew update && brew upgrade -y'
+alias brewup='HOMEBREW_GITHUB_API_TOKEN=$(gh auth token) && brew update && brew upgrade -y'
 alias c=clear
 alias cursor='cursor --classic'
 alias deit='docker exec -i -t'
