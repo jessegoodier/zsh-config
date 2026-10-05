@@ -321,6 +321,51 @@ install_python_venv() {
 	print ".zshrc sources ~/.venv/bin/activate when that path exists."
 }
 
+configure_iterm2() {
+	[[ $(uname -s) == Darwin ]] || return 0
+	local folder="$HOME/.config/iterm2-settings"
+	local domain=com.googlecode.iterm2
+	local current enabled have_selection save_mode
+	current=$(defaults read "$domain" PrefsCustomFolder 2>/dev/null) || current=""
+	enabled=$(defaults read "$domain" LoadPrefsFromCustomFolder 2>/dev/null) || enabled=0
+	have_selection=$(defaults read "$domain" NoSyncNeverRemindPrefsChangesLostForFile 2>/dev/null) || have_selection=0
+	save_mode=$(defaults read "$domain" NoSyncNeverRemindPrefsChangesLostForFile_selection 2>/dev/null) || save_mode=-1
+
+	# Selection 0 is "copy on quit". iTerm2's default is to ask, which is the
+	# "Settings have changed. Copy them to ...?" dialog. These keys are
+	# per-machine (NoSync), so they stay out of the tracked plist.
+	local need_folder=0 need_save=0
+	[[ $current == "$folder" && $enabled == 1 ]] || need_folder=1
+	[[ $have_selection == 1 && $save_mode == 0 ]] || need_save=1
+	(( need_folder || need_save )) || return 0
+
+	if (( need_folder )); then
+		ensure_backup_dir
+		if (( DRY_RUN )); then
+			print "Would export iTerm2 preferences to $BACKUP_DIR/com.googlecode.iterm2.plist"
+			print "Would configure iTerm2 to load settings from $folder"
+		else
+			# Export through defaults to include preferences cached by macOS.
+			if defaults export "$domain" "$BACKUP_DIR/com.googlecode.iterm2.plist" 2>/dev/null; then
+				record COPIED "iTerm2 preferences -> $BACKUP_DIR/com.googlecode.iterm2.plist"
+			fi
+			defaults write "$domain" PrefsCustomFolder -string "$folder"
+			defaults write "$domain" LoadPrefsFromCustomFolder -bool true
+		fi
+		record CONFIGURED "iTerm2 custom settings folder -> $folder"
+	fi
+	if (( need_save )); then
+		if (( DRY_RUN )); then
+			print "Would set iTerm2 to save settings to $folder when it quits"
+		else
+			defaults write "$domain" NoSyncNeverRemindPrefsChangesLostForFile -bool true
+			defaults write "$domain" NoSyncNeverRemindPrefsChangesLostForFile_selection -int 0
+		fi
+		record CONFIGURED "iTerm2 save settings to custom folder on quit"
+	fi
+	print "iTerm2: quit and reopen the app so it loads settings from $folder."
+}
+
 # --- main ---
 
 while (( $# )); do
@@ -388,6 +433,7 @@ for src in "$REPO_ROOT/.config"/*(N); do
 done
 
 install_pair "$REPO_ROOT/.config/zsh/.zshrc" "$HOME/.zshrc"
+configure_iterm2
 snapshot_shadowed
 import_zsh_history
 install_python_venv
