@@ -50,7 +50,19 @@ Run the script; do not `source` it.
 | `.config/zsh/.zshrc` | `~/.zshrc` |
 | each top-level entry under `.config/` | `~/.config/<name>` |
 
-Today that `.config/` set is `cspell`, `fzf`, `fzf-git`, `yazi`, `zsh`, and `zsh-patina`. New top-level entries are picked up automatically.
+Today that `.config/` set is `cspell`, `fzf`, `fzf-git`, `iterm2-settings`, `yazi`, `zsh`, and `zsh-patina`. New top-level entries are picked up automatically.
+
+## iTerm2
+
+On macOS, the installer points iTerm2's custom settings folder at `~/.config/iterm2-settings` and sets it to copy settings there on quit. Profile and theme edits then write back through the symlink into this clone, without the "Settings have changed. Copy them to ...?" prompt. It exports the previous preferences into the ignored dated backup folder before changing the folder setting. Quit iTerm2 and open it again after installing.
+
+The tracked XML plist includes the current default profile, light/dark colors, custom color presets, font choices, key mappings, triggers, scrollback, and related terminal preferences. The initial export excludes machine state, AI settings, workgroups, and window restoration data. Review future plist diffs before committing: iTerm2's own save operation may include additional settings.
+
+The profile uses **JetBrains Mono Nerd Font Mono, 13 pt** (`JetBrainsMonoNFM-Regular`). Install that font on each Mac, for example with `brew install --cask font-jetbrains-mono-nerd-font`. Font files are not included. The unused old absolute working-directory path has been cleared; the profile still starts in the home directory.
+
+Pull changes while iTerm2 is closed, then launch it to load the updated settings. To share local changes, quit iTerm2 so it saves, inspect the plist diff, then commit and push it. The custom folder mechanism is documented in the [current iTerm2 documentation](https://iterm2.com/documentation-preferences-general.html), checked in October 2026.
+
+To undo the custom folder setting, turn off **Load settings from a custom folder or URL** in iTerm2. With iTerm2 closed, restore the exported preferences using `defaults import com.googlecode.iterm2 backups/<timestamp>/com.googlecode.iterm2.plist` if needed.
 
 `$HOME/.zshenv` must be this repo’s file (or a copy of it). zsh only reads `$ZDOTDIR/.zshenv` automatically when `ZDOTDIR` is already set; this file sets it, then sources `$ZDOTDIR/.zshenv`.
 
