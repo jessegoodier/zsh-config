@@ -309,7 +309,30 @@ install_iterm_profile() {
 	migrate_iterm_folder
 	confirm iterm "Install the zsh-config iTerm2 profile?" || return 0
 	install_pair "$ITERM_PROFILE" "$ITERM_PROFILE_DEST"
-	print "iTerm2: select the zsh-config profile, or make it the default in Settings > Profiles."
+	set_iterm_default_profile
+}
+
+# Make zsh-config the default profile. A running iTerm2 overwrites defaults
+# writes when it quits, so this only happens while iTerm2 is closed.
+set_iterm_default_profile() {
+	local guid current
+	guid=$(plutil -extract Profiles.0.Guid raw "$ITERM_PROFILE") || {
+		print -u2 "Warning: no Guid in $ITERM_PROFILE; not setting the default profile."
+		return 0
+	}
+	current=$(iterm_pref "Default Bookmark Guid" "")
+	if [[ $current == "$guid" ]]; then
+		print "iTerm2: zsh-config is already the default profile."
+		return 0
+	fi
+	if pgrep -xq iTerm2; then
+		print "iTerm2 is running, so the default profile was not changed. Either:"
+		print "  - quit iTerm2 and run from Terminal.app: $REPO_ROOT/$SCRIPT_NAME --iterm"
+		print "  - or in iTerm2: Settings > Profiles > zsh-config > Other Actions > Set as Default"
+		return 0
+	fi
+	run defaults write $ITERM_DOMAIN "Default Bookmark Guid" -string "$guid"
+	record CONFIGURED "iTerm2 default profile ${current:-(none)} -> $guid (zsh-config)"
 }
 
 # Undo the old custom-folder setup: drop the dangling ~/.config link and warn
