@@ -30,5 +30,5 @@ fi
 zsh-defer -c "[[ -r $ZSH_CONFIG_DIR/functions.zsh ]] && source $ZSH_CONFIG_DIR/functions.zsh"
 
 if [[ -d $HOME/.git-ai/bin ]]; then
-	path=($HOME/.git-ai/bin $path)
+	export PATH="$HOME/.git-ai/bin:$PATH"
 fi

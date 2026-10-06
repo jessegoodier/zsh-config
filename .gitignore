@@ -229,6 +229,12 @@ __marimo__/
 .streamlit/secrets.toml
 .kubeconfig
 .config/cursor.json
+# Shell history and session state, at any depth (may contain secrets)
+.zsh_history
+.zsh_history.*
+.zhistory
+.histfile
+*_history
 .config/zsh/.zsh_sessions/
 .config/zsh/.zcompdump*
 claude.sh
