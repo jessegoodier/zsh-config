@@ -3,7 +3,7 @@
 () {
 	local n
 	for n in z y extract port myip pingmap weather uvi nai kai kla klap klaf \
-		cat ll l la ls scan_image password_gen mdcd mdtmpcd kpf ksd kgpv ki fnm-on
+		cat ll l la ls scan_image password_gen mdcd mdtmpcd kpf ksd kgpv ki
 	do
 		unalias "$n" 2>/dev/null
 	done
@@ -17,19 +17,6 @@ C_GREEN=${fg[green]}
 C_YELLOW=${fg[yellow]}
 C_CYAN=${fg[cyan]}
 C_NC=${reset_color}
-
-# SSH Agent / Keychain
-_ssh_agent_lazy() {
-	if [[ -n "$SSH_AUTH_SOCK" && -S "$SSH_AUTH_SOCK" ]] &&
-		ssh-add -l >/dev/null 2>&1; then
-		echo "${C_GREEN}SSH agent already active${C_NC}"
-		return 0
-	fi
-
-	[[ -f ~/.keychain/"$HOST"-sh ]] && source ~/.keychain/"$HOST"-sh
-	eval "$(keychain --eval --quiet --nogui --timeout 480 ~/.ssh/id_ed25519)" &&
-	echo "${C_GREEN}SSH agent started${C_NC}"
-}
 
 # zoxide integration
 z() {
@@ -59,23 +46,6 @@ y() {
 	dir=$(cat -- "$cwd")
 	rm -f -- "$cwd"
 	[[ -n $dir && $dir != "$PWD" ]] && builtin cd -- "$dir"
-}
-
-# fnm lazy load
-_fnm_lazy_load() {
-	if [[ -f package.json ]]; then
-		eval "$(fnm env)" 2>/dev/null || return
-		add-zsh-hook -d chpwd _fnm_lazy_load
-	fi
-}
-_fnm_lazy_load
-add-zsh-hook -d chpwd _fnm_lazy_load 2>/dev/null
-add-zsh-hook chpwd _fnm_lazy_load
-
-# fnm manual activation
-fnm-on() {
-	eval "$(fnm env)" 2>/dev/null
-	echo "${C_GREEN}Node activated${C_NC}"
 }
 
 # Extract one or more archive files based on their extension
