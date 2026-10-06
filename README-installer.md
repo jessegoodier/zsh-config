@@ -93,9 +93,11 @@ If `brew` is not on `PATH`, it also looks in `/opt/homebrew/bin`, `/usr/local/bi
 
 ## Zsh plugins
 
-After linking `$HOME/.config/zsh`, the installer reads `plugin-path` entries from [`.config/zsh/plugins.zsh`](.config/zsh/plugins.zsh) and adds `zsh-patina`. For each plugin missing from `$HOME/.config/zsh/plugins/`, it clones from GitHub (same repos as first-launch `plugin-path`). If `zsh-patina` is present but not built, it runs `cargo build --release` when `cargo` is available.
+After linking, the installer clones any missing zsh plugins so the first shell starts without downloading. The list comes from the `plugin-path <owner> <repo>` lines in [`.config/zsh/plugins.zsh`](.config/zsh/plugins.zsh), plus `zsh-patina`, so adding a plugin there is enough. Each one is cloned with `git clone --depth=1` from GitHub into `.config/zsh/plugins/` in this clone (`~/.config/zsh/plugins`), the same place `plugin-path` uses. Clones are gitignored.
 
-`./installer.sh --dry-run` lists each plugin as `OK` or prints `Would clone …` / `Would run: cargo build …` without changing anything. Needs `git` on `PATH` (or installable via `--brew`).
+`zsh-patina` is built with `cargo build --release` when its binary is missing. Compiler output is shown only if the build fails.
+
+Each plugin prints `OK`, `CLONED`, or under `--dry-run` `Would clone …`. A missing `git` or `cargo`, or a failed clone or build, prints a warning and the install continues; zsh retries on first launch. `update-plugin` refreshes plugins later.
 
 ## History import
 

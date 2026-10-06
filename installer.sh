@@ -20,6 +20,11 @@ SCRIPT_NAME="${0:t}"
 TOOLS=(git:git fzf:fzf eza:eza bat:bat fd:fd cargo:rust uv:uv)
 # Files zsh stops reading once ZDOTDIR is set. Copied, not moved.
 SHADOWED=(.zprofile .zlogin .zlogout)
+# Plugins are listed as `plugin-path <owner> <repo>` lines in plugins.zsh;
+# zsh-patina is loaded separately there and needs a cargo build.
+PLUGINS_FILE="$REPO_ROOT/.config/zsh/plugins.zsh"
+PLUGIN_DIR="$REPO_ROOT/.config/zsh/plugins"
+PATINA=(michel-kraemer zsh-patina)
 # Repo paths linked into $HOME alongside the Python venv.
 PYTHON_LINKS=(pyproject.toml .envrc src)
 BREW_PATHS=(/opt/homebrew/bin/brew /usr/local/bin/brew "$HOME/.linuxbrew/bin/brew" /home/linuxbrew/.linuxbrew/bin/brew)
@@ -238,6 +243,64 @@ link_dotfiles() {
 	install_pair "$REPO_ROOT/.config/zsh/.zshrc" "$HOME/.zshrc"
 }
 
+# Clone missing zsh plugins now instead of on the first shell start. Same
+# repos and layout as plugin-path in plugins.zsh. Failures only warn: zsh
+# retries on first launch.
+install_plugins() {
+	if ! (( $+commands[git] )); then
+		print -u2 "Warning: git is not installed; zsh will clone plugins on first launch."
+		return 0
+	fi
+	local -a specs
+	local line
+	for line in ${(f)"$(<$PLUGINS_FILE)"}; do
+		[[ $line == (#b)plugin-path[[:space:]]##([^[:space:]]##)[[:space:]]##([^[:space:]]##)* ]] &&
+			specs+=("$match[1]/$match[2]")
+	done
+	specs=(${(u)specs} ${(j:/:)PATINA})
+
+	print "Plugins: $PLUGIN_DIR"
+	local spec name dir
+	for spec in $specs; do
+		name=${spec:t} dir="$PLUGIN_DIR/${spec:t}"
+		if [[ -d $dir ]]; then
+			print "  OK      $name"
+		elif (( DRY_RUN )); then
+			print "  Would clone https://github.com/$spec"
+		elif run mkdir -p "$PLUGIN_DIR" && git clone --depth=1 --quiet "https://github.com/$spec" "$dir"; then
+			print "  CLONED  $name"
+		else
+			rm -rf -- "$dir"
+			print -u2 "  Warning: could not clone $spec; zsh will retry on first launch."
+		fi
+	done
+	build_patina
+}
+
+build_patina() {
+	local dir="$PLUGIN_DIR/$PATINA[2]"
+	[[ -x $dir/target/release/zsh-patina ]] && return 0
+	[[ -d $dir ]] || (( DRY_RUN )) || return 0
+	if ! (( $+commands[cargo] )); then
+		print -u2 "  Warning: cargo is not installed; zsh-patina is not built (see https://rustup.rs)."
+		return 0
+	fi
+	if (( DRY_RUN )); then
+		print "  Would run: cargo build --release in $dir"
+		return 0
+	fi
+	# Compiler warnings are noise on success; show the output only on failure.
+	local out
+	print "  Building zsh-patina (cargo build --release)..."
+	if out=$(env -u CARGO_TARGET_DIR cargo build --release --quiet --manifest-path "$dir/Cargo.toml" 2>&1); then
+		print "  BUILT   zsh-patina"
+	else
+		print -u2 -r -- "$out"
+		print -u2 "  Warning: zsh-patina build failed; run: (cd $dir && cargo build --release)"
+	fi
+	return 0
+}
+
 # Link the zsh-config profile as an iTerm2 Dynamic Profile. iTerm2 loads it
 # live and never writes it back, so the repo copy only changes when you
 # re-export it on purpose. Other iTerm2 preferences are left alone.
@@ -390,6 +453,7 @@ print "Home:  $HOME"
 print
 
 link_dotfiles
+install_plugins
 install_iterm_profile
 snapshot_shadowed
 import_zsh_history
