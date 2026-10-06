@@ -27,7 +27,7 @@ chsh -s $(command -v zsh)
 ## Flags
 
 ```text
-./installer.sh                  # backup + link; prompt for brew, history, and Python venv
+./installer.sh                  # backup + link; prompt for brew, iTerm2, history, and Python venv
 ./installer.sh --dry-run        # print actions, change nothing
 ./installer.sh --python         # install the venv without prompting
 ./installer.sh --no-python      # skip the venv without prompting
@@ -35,10 +35,12 @@ chsh -s $(command -v zsh)
 ./installer.sh --no-brew        # skip Homebrew without prompting
 ./installer.sh --history        # import ~/.zsh_history without prompting
 ./installer.sh --no-history     # skip history import without prompting
+./installer.sh --iterm          # install the iTerm2 profile without prompting
+./installer.sh --no-iterm       # skip iTerm2 setup without prompting
 ./installer.sh --help
 ```
 
-`--dry-run` does not wait for prompts. Combine with `--python`, `--brew`, and/or `--history` to see those actions. If stdin is not a TTY, optional steps are skipped unless you pass the matching `--` flag.
+`--dry-run` does not wait for prompts. Combine with `--python`, `--brew`, `--history`, and/or `--iterm` to see those actions. If stdin is not a TTY, optional steps are skipped unless you pass the matching `--` flag.
 
 Run the script; do not `source` it.
 
@@ -50,19 +52,26 @@ Run the script; do not `source` it.
 | `.config/zsh/.zshrc` | `~/.zshrc` |
 | each top-level entry under `.config/` | `~/.config/<name>` |
 
-Today that `.config/` set is `cspell`, `fzf`, `fzf-git`, `iterm2-settings`, `yazi`, `zsh`, and `zsh-patina`. New top-level entries are picked up automatically.
+Today that `.config/` set is `cspell`, `fzf`, `fzf-git`, `yazi`, `zsh`, and `zsh-patina`. New top-level entries are picked up automatically.
 
 ## iTerm2
 
-On macOS, the installer points iTerm2's custom settings folder at `~/.config/iterm2-settings` and sets it to copy settings there on quit. Profile and theme edits then write back through the symlink into this clone, without the "Settings have changed. Copy them to ...?" prompt. It exports the previous preferences into the ignored dated backup folder before changing the folder setting. Quit iTerm2 and open it again after installing.
+On macOS, the installer asks whether to install the `zsh-config` iTerm2 profile (`--iterm` / `--no-iterm`). It links [`iterm2/zsh-config.json`](iterm2/zsh-config.json) into `~/Library/Application Support/iTerm2/DynamicProfiles/` as a [Dynamic Profile](https://iterm2.com/documentation-dynamic-profiles.html). iTerm2 picks it up while running; no restart or import is needed, and no other iTerm2 preference is changed. Select it, or make it the default in **Settings > Profiles > Other Actions > Set as Default**.
 
-The tracked XML plist includes the current default profile, light/dark colors, custom color presets, font choices, key mappings, triggers, scrollback, and related terminal preferences. The initial export excludes machine state, AI settings, workgroups, and window restoration data. Review future plist diffs before committing: iTerm2's own save operation may include additional settings.
+iTerm2 never writes a Dynamic Profile back, so this repo only changes when you re-export on purpose. Edits you make to the profile in iTerm2 last until it quits. To keep them, export and replace the repo copy:
 
-The profile uses **JetBrains Mono Nerd Font Mono, 13 pt** (`JetBrainsMonoNFM-Regular`). Install that font on each Mac, for example with `brew install --cask font-jetbrains-mono-nerd-font`. Font files are not included. The unused old absolute working-directory path has been cleared; the profile still starts in the home directory.
+1. **Settings > Profiles**, select `zsh-config`, **Other Actions > Save Profile as JSON**.
+2. Wrap it, keeping the fixed name and GUID:
 
-Pull changes while iTerm2 is closed, then launch it to load the updated settings. To share local changes, quit iTerm2 so it saves, inspect the plist diff, then commit and push it. The custom folder mechanism is documented in the [current iTerm2 documentation](https://iterm2.com/documentation-preferences-general.html), checked in October 2026.
+   ```zsh
+   python3 -c 'import json,sys; p=json.load(open(sys.argv[1])); p.update(Name="zsh-config", Guid="5E1C0F2A-7B3D-4C8E-9A61-2D4F8B0C3E17"); [p.pop(k) for k in list(p) if k.startswith("Dynamic Profile") or k == "Default Bookmark"]; json.dump({"Profiles":[p]}, open("iterm2/zsh-config.json","w"), indent=2, sort_keys=True)' ~/Downloads/zsh-config.json
+   ```
 
-To undo the custom folder setting, turn off **Load settings from a custom folder or URL** in iTerm2. With iTerm2 closed, restore the exported preferences using `defaults import com.googlecode.iterm2 backups/<timestamp>/com.googlecode.iterm2.plist` if needed.
+3. Review `git diff iterm2/` (look for working directories, commands, hostnames) before committing.
+
+The profile covers colors (light and dark), fonts, key mappings, triggers, and scrollback. Global settings such as custom color presets and pointer actions are not included. It uses **JetBrains Mono Nerd Font Mono, 13 pt** (`JetBrainsMonoNFM-Regular`); install it with `brew install --cask font-jetbrains-mono-nerd-font`.
+
+Earlier versions pointed iTerm2's custom settings folder at `~/.config/iterm2-settings`. The installer removes that dangling link and warns if iTerm2 still loads from it; turn off **Settings > General > Settings > Load settings from a custom folder or URL** in iTerm2.
 
 `$HOME/.zshenv` must be this repo’s file (or a copy of it). zsh only reads `$ZDOTDIR/.zshenv` automatically when `ZDOTDIR` is already set; this file sets it, then sources `$ZDOTDIR/.zshenv`.
 
@@ -70,15 +79,11 @@ To undo the custom folder setting, turn off **Load settings from a custom folder
 
 ## Python venv
 
-The installer asks whether to install the default virtual environment from [pyproject.toml](./pyproject.toml) (Python 3.12+, via `uv sync` in the clone) and symlink `$HOME/.venv` to `$REPO/.venv`.
+The installer asks whether to install the default virtual environment from [pyproject.toml](./pyproject.toml) (Python 3.12+, via `uv sync` in the clone) and symlink `$HOME/.venv` to `$REPO/.venv`. The environment is always created at `$REPO/.venv`. A parent uv workspace, such as `~/pyproject.toml`, would otherwise put it at `$HOME/.venv` and then fail on the next run, because that path is already the symlink.
 
-`.zshrc` already activates it when present:
+Re-runs sync into the existing clone environment. If `$HOME/.venv` already points at it, the link is left alone. An existing `~/.venv` that points somewhere else is moved into the dated backup folder before the symlink is created, same as the other targets. Needs [uv](https://docs.astral.sh/uv/). Details of the tools: [README-python.md](./README-python.md).
 
-```zsh
-[[ -r $HOME/.venv/bin/activate ]] && source "$HOME/.venv/bin/activate"
-```
-
-An existing `~/.venv` is moved into the dated backup folder before the symlink is created, same as the other targets. Needs [uv](https://docs.astral.sh/uv/). Details of the tools: [README-python.md](./README-python.md).
+`.zshrc` puts `$HOME/.venv/bin` on `PATH` when that directory exists.
 
 ## Homebrew
 
@@ -147,6 +152,7 @@ Only restore the paths you need. Copied shadowed files (`.zshrc` and friends) we
 - Does not install the Python venv unless you answer yes or pass `--python`.
 - Does not install Homebrew or formulae unless you answer yes or pass `--brew`.
 - Does not import `~/.zsh_history` unless you answer yes or pass `--history`.
+- Does not install the iTerm2 profile unless you answer yes or pass `--iterm` (macOS only), and never changes other iTerm2 preferences.
 - Missing tools still produce a warning if you skip Homebrew; install continues. Missing `uv` only matters if you opted into the venv.
 
 Requirements, first launch, overlays, and troubleshooting are in [README-howto.md](./README-howto.md).
