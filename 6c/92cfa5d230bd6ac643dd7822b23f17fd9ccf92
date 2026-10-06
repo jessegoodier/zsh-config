@@ -1,0 +1,24 @@
+.gitignore
+  s_43462c9dc72e4d::t_86320960a83360 232-237
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6c92cfa5d230bd6ac643dd7822b23f17fd9ccf92",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_43462c9dc72e4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e973cd81-942d-4a69-8446-7db953874f5e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
