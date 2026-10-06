@@ -1,0 +1,44 @@
+README-installer.md
+  s_2bae2e3dbfb165::t_8a0991b5a0cd4c 30,32-43,47-49
+README-howto.md
+  s_a9c0ce34713b8f::t_a39e505e45a8c2 32
+  s_a9c0ce34713b8f::t_37aae751f2426a 87
+installer.sh
+  s_2bae2e3dbfb165::t_cdb837e39d6e40 264
+  s_a9c0ce34713b8f::t_e0d9d24923a98c 219-222
+  s_2bae2e3dbfb165::t_d6492465e35155 40-43
+  s_2bae2e3dbfb165::t_78f00412dfe037 52-53
+  s_2bae2e3dbfb165::t_88437cc8e13ff4 464-465
+  s_2bae2e3dbfb165::t_f2cf0941b1cf43 100-106
+  s_2bae2e3dbfb165::t_2b72c83d743393 486,493-495,497-498
+  s_2bae2e3dbfb165::t_cf69d22a2a5336 251
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ff01d7a9bd5851b4c58a35839326beba1ed83adb",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_2bae2e3dbfb165": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d2657cb9-191e-44f2-a244-ed9c5ac6bb51",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    },
+    "s_a9c0ce34713b8f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "9c3c064e-a9fa-4296-82fb-4a45d461472b",
+        "model": "grok-4.7"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
