@@ -29,7 +29,7 @@ This repo is an XDG zsh setup: a tiny `$HOME/.zshenv` points zsh at `$XDG_CONFIG
 | [fd](https://github.com/sharkdp/fd)                                                | overlay `FZF_DEFAULT_COMMAND`                                               |
 | rust/`cargo`                                                                       | first-time [zsh-patina](https://github.com/michel-kraemer/zsh-patina) build |
 
-Optional: `kubectl` / `kubecolor` (overlay), `zoxide`, `yazi`, `fnm`, `keychain`, `nvim`. Missing tools are skipped or only break the alias that uses them.
+Optional: `kubectl` / `kubecolor` (overlay), `zoxide`, `yazi`, `nvim`. Missing tools are skipped or only break the alias that uses them.
 
 Homebrew is the usual source for these on macOS (`/opt/homebrew` or `/usr/local`) and Linux (`/home/linuxbrew/.linuxbrew` or `~/.linuxbrew`). `.zshenv` evals `brew shellenv` from the first of those that exists.
 
@@ -84,7 +84,7 @@ Three layers, last writer wins:
 
 - **Eager:** gitstatus, zsh-defer, ez-compinit (queues `compdef`; real `compinit` on first prompt), zsh-completions, the `config/*.zsh` modules.
 - **Deferred (`zsh-defer`):** fzf-tab, autosuggestions, history-substring-search, colored-man-pages, zsh-patina, overlay alias packs.
-- **Lazy:** fzf widgets (Ctrl-R / Ctrl-T / Alt-C), `zoxide`, `fnm` (when `package.json` is in `$PWD`).
+- **Lazy:** fzf widgets (Ctrl-R / Ctrl-T / Alt-C), `zoxide`.
 
 That split is what keeps first prompt snappy. Put slow or opinionated work in the overlay and `zsh-defer` it.
 

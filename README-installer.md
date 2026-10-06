@@ -27,20 +27,26 @@ chsh -s $(command -v zsh)
 ## Flags
 
 ```text
-./installer.sh                  # backup + link; prompt for brew, iTerm2, history, and Python venv
+./installer.sh                  # prompt for every step: brew, dotfiles, plugins, iTerm2, history, Python venv
 ./installer.sh --dry-run        # print actions, change nothing
-./installer.sh --python         # install the venv without prompting
-./installer.sh --no-python      # skip the venv without prompting
-./installer.sh --brew           # install missing Homebrew formulae without prompting
-./installer.sh --no-brew        # skip Homebrew without prompting
-./installer.sh --history        # import ~/.zsh_history without prompting
-./installer.sh --no-history     # skip history import without prompting
-./installer.sh --iterm          # install the iTerm2 profile without prompting
-./installer.sh --no-iterm       # skip iTerm2 setup without prompting
+./installer.sh --iterm          # run ONLY the iTerm2 profile step, unprompted
+./installer.sh --python         # run ONLY the Python venv step, unprompted
+./installer.sh --brew           # run ONLY the Homebrew step, unprompted
+./installer.sh --history        # run ONLY the history import step, unprompted
+./installer.sh --dotfiles       # run ONLY the dotfiles-linking step, unprompted
+./installer.sh --plugins        # run ONLY the zsh-plugins step, unprompted
+./installer.sh --no-python      # (with no other step flags) run everything except the venv, still prompting the rest
+./installer.sh --no-brew        # same idea for Homebrew
+./installer.sh --no-history     # same idea for history import
+./installer.sh --no-iterm       # same idea for iTerm2
+./installer.sh --no-dotfiles    # same idea for dotfiles linking
+./installer.sh --no-plugins     # same idea for zsh plugins
 ./installer.sh --help
 ```
 
-`--dry-run` does not wait for prompts. Combine with `--python`, `--brew`, `--history`, and/or `--iterm` to see those actions. If stdin is not a TTY, optional steps are skipped unless you pass the matching `--` flag.
+Passing any `--<step>` flag switches to selective mode: only the named step(s) run, each unprompted, and every other step is skipped entirely. You can pass more than one, e.g. `--iterm --history` runs just those two. With no `--<step>` flags at all, every step runs in order and each one prompts (skipped automatically if stdin is not a TTY, with a message naming the flag to pass instead). A `--no-<step>` flag used alone (no positive flag) does not trigger selective mode — it just forces that one step off while the rest still prompt normally.
+
+`--dry-run` does not wait for prompts; combine it with a step flag to preview that step's actions.
 
 Run the script; do not `source` it.
 

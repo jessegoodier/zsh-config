@@ -37,8 +37,10 @@ ITERM_OLD_FOLDER="$HOME/.config/iterm2-settings"
 # --- state ---
 
 DRY_RUN=0
-# Optional steps: ask, yes, or no. Set by --<step> / --no-<step>.
-typeset -A MODE=(brew ask iterm ask history ask python ask)
+# Steps: ask, yes, or no. Set by --<step> / --no-<step>.
+typeset -A MODE=(brew ask dotfiles ask plugins ask iterm ask history ask python ask)
+# Set when any --<step> flag is passed: only those steps run, unprompted.
+SELECTIVE=0
 BACKUP_DIR=""
 DID_WORK=0
 REPORTED_FAILURE=0
@@ -47,7 +49,8 @@ typeset -a MANIFEST=()
 # --- helpers ---
 
 usage() {
-	print "Usage: $SCRIPT_NAME [--dry-run] [--python|--no-python] [--brew|--no-brew] [--history|--no-history] [--iterm|--no-iterm] [--help]"
+	print "Usage: $SCRIPT_NAME [--dry-run] [--brew|--no-brew] [--dotfiles|--no-dotfiles] [--plugins|--no-plugins] [--iterm|--no-iterm] [--history|--no-history] [--python|--no-python] [--help]"
+	print "Passing any --<step> flag runs only the named steps, unprompted. With none, every step is prompted."
 	print "See README-installer.md for details."
 }
 
@@ -92,6 +95,13 @@ confirm() {
 	print -n "$prompt [y/N] "
 	read -r reply || true
 	[[ $reply == (#i)y(es|) ]]
+}
+
+# should_run <step>: in selective mode (any --<step> flag given), only the
+# flagged steps run at all; everything else is skipped before it can prompt.
+should_run() {
+	(( SELECTIVE )) || return 0
+	[[ ${MODE[$1]} == yes ]]
 }
 
 ensure_backup_dir() {
@@ -206,7 +216,10 @@ offer_brew_packages() {
 	local -a missing_cmds missing_formulae
 	resolve_brew && have_brew=1
 	collect_missing_tools
-	(( $#missing_cmds )) || return 0
+	if (( ! $#missing_cmds )); then
+		print "All Homebrew packages are already installed (${(j:, :)${TOOLS%%:*}})."
+		return 0
+	fi
 
 	print "Missing tools: ${(j:, :)missing_cmds}"
 	print "Homebrew formulae: ${(j:, :)missing_formulae}"
@@ -235,6 +248,7 @@ offer_brew_packages() {
 }
 
 link_dotfiles() {
+	confirm dotfiles "Link dotfiles into \$HOME?" || return 0
 	local src
 	install_pair "$REPO_ROOT/.zshenv" "$HOME/.zshenv"
 	for src in "$REPO_ROOT"/.config/*(N); do
@@ -247,6 +261,7 @@ link_dotfiles() {
 # repos and layout as plugin-path in plugins.zsh. Failures only warn: zsh
 # retries on first launch.
 install_plugins() {
+	confirm plugins "Install/update zsh plugins?" || return 0
 	if ! (( $+commands[git] )); then
 		print -u2 "Warning: git is not installed; zsh will clone plugins on first launch."
 		return 0
@@ -446,8 +461,8 @@ while (( $# )); do
 	case $1 in
 		-h | --help) usage; exit 0 ;;
 		--dry-run) DRY_RUN=1 ;;
-		--no-(brew|iterm|history|python)) MODE[${1#--no-}]=no ;;
-		--(brew|iterm|history|python)) MODE[${1#--}]=yes ;;
+		--no-(brew|dotfiles|plugins|iterm|history|python)) MODE[${1#--no-}]=no ;;
+		--(brew|dotfiles|plugins|iterm|history|python)) MODE[${1#--}]=yes; SELECTIVE=1 ;;
 		*)
 			print -u2 "Unknown option: $1"
 			usage
@@ -468,18 +483,18 @@ if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
 	print -u2 "Warning: running as root. Prefer installing as your normal user."
 fi
 
-offer_brew_packages
+should_run brew && offer_brew_packages
 
 print "Repo:  $REPO_ROOT"
 print "Home:  $HOME"
 (( DRY_RUN )) && print "Mode:  dry-run"
 print
 
-link_dotfiles
-install_plugins
-install_iterm_profile
+should_run dotfiles && link_dotfiles
+should_run plugins && install_plugins
+should_run iterm && install_iterm_profile
 snapshot_shadowed
-import_zsh_history
-install_python_venv
+should_run history && import_zsh_history
+should_run python && install_python_venv
 write_manifest
 print_summary
