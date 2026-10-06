@@ -1,0 +1,23 @@
+installer.sh
+  s_43462c9dc72e4d::t_ba22c820dc93ca 283
+  s_43462c9dc72e4d::t_ed6522e8f4d42e 23-27,246-282,284-289,296-297,299-303,456
+  s_43462c9dc72e4d::t_fafc3f8acd3de3 290-295,298
+README-installer.md
+  s_43462c9dc72e4d::t_2599c4bacdb4b5 96,98-100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "24e3a7f930641e30d5c5cda60ad3ffcfe306a061",
+  "prompts": {},
+  "sessions": {
+    "s_43462c9dc72e4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e973cd81-942d-4a69-8446-7db953874f5e",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
