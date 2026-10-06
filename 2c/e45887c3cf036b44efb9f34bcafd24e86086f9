@@ -1,0 +1,24 @@
+.config/zsh/config/functions.zsh
+  s_a9c0ce34713b8f::t_3f132da07b51b8 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2ce45887c3cf036b44efb9f34bcafd24e86086f9",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_a9c0ce34713b8f": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "9c3c064e-a9fa-4296-82fb-4a45d461472b",
+        "model": "grok-4.7"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
