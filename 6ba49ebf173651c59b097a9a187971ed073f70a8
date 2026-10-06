@@ -1,0 +1,18 @@
+.config/zsh/.zshrc
+  h_cca6aa2712613d 31-34
+pyproject.toml
+  h_cca6aa2712613d 8,17
+.config/zsh/config/aliases.zsh
+  h_cca6aa2712613d 4
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6ba49ebf173651c59b097a9a187971ed073f70a8",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
