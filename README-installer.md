@@ -56,7 +56,7 @@ Today that `.config/` set is `cspell`, `fzf`, `fzf-git`, `yazi`, `zsh`, and `zsh
 
 ## iTerm2
 
-On macOS, the installer asks whether to install the `zsh-config` iTerm2 profile (`--iterm` / `--no-iterm`). It links [`iterm2/zsh-config.json`](iterm2/zsh-config.json) into `~/Library/Application Support/iTerm2/DynamicProfiles/` as a [Dynamic Profile](https://iterm2.com/documentation-dynamic-profiles.html). iTerm2 picks it up while running; no restart or import is needed, and no other iTerm2 preference is changed. Select it, or make it the default in **Settings > Profiles > Other Actions > Set as Default**.
+On macOS, the installer asks whether to install the `zsh-config` iTerm2 profile (`--iterm` / `--no-iterm`). It links [`iterm2/zsh-config.json`](iterm2/zsh-config.json) into `~/Library/Application Support/iTerm2/DynamicProfiles/` as a [Dynamic Profile](https://iterm2.com/documentation-dynamic-profiles.html). iTerm2 picks it up while running; no restart or import is needed, and no other iTerm2 preference is changed. It also makes `zsh-config` the default profile (the GUID is read from the JSON), but only while iTerm2 is closed: a running iTerm2 overwrites that setting when it quits. Run from an iTerm2 window, the installer skips this step and says so. Quit iTerm2 and run `./installer.sh --iterm` from Terminal.app, or use **Settings > Profiles > Other Actions > Set as Default**. The previous default GUID is printed, so you can switch back.
 
 iTerm2 never writes a Dynamic Profile back, so this repo only changes when you re-export on purpose. Edits you make to the profile in iTerm2 last until it quits. To keep them, export and replace the repo copy:
 
@@ -154,7 +154,7 @@ Only restore the paths you need. Copied shadowed files (`.zshrc` and friends) we
 - Does not install the Python venv unless you answer yes or pass `--python`.
 - Does not install Homebrew or formulae unless you answer yes or pass `--brew`.
 - Does not import `~/.zsh_history` unless you answer yes or pass `--history`.
-- Does not install the iTerm2 profile unless you answer yes or pass `--iterm` (macOS only), and never changes other iTerm2 preferences.
+- Does not install the iTerm2 profile or change the default profile unless you answer yes or pass `--iterm` (macOS only), and never changes other iTerm2 preferences.
 - Missing tools still produce a warning if you skip Homebrew; install continues. Missing `uv` only matters if you opted into the venv.
 
 Requirements, first launch, overlays, and troubleshooting are in [README-howto.md](./README-howto.md).
