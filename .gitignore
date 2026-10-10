@@ -240,3 +240,4 @@ __marimo__/
 claude.sh
 .key*
 .gitconfig
+.config/zsh/.zcompcache/
