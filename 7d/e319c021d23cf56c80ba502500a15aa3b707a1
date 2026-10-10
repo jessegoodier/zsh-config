@@ -1,0 +1,19 @@
+.config/zsh/config/completion.zsh
+  s_91e44588e3aaab::t_ad71d871dcdd29 26-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7de319c021d23cf56c80ba502500a15aa3b707a1",
+  "prompts": {},
+  "sessions": {
+    "s_91e44588e3aaab": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "11e54574-64c3-4de6-aa80-5ea78e4f8651",
+        "model": "unknown"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
