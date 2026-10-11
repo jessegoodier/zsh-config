@@ -4,7 +4,7 @@ This repo is an XDG zsh setup: a tiny `$HOME/.zshenv` points zsh at `$XDG_CONFIG
 
 ## Layout
 
-```
+```text
 .zshenv                         →  $HOME/.zshenv          (sets ZDOTDIR)
 .config/zsh/.zshenv             →  env, PATH, path_add
 .config/zsh/.zshrc              →  $ZDOTDIR/.zshrc; also $HOME/.zshrc (symlink)
@@ -110,7 +110,7 @@ zsh-bench needs the prompt to contain the hostname or the last path component. T
 
 ## Scheduled OneDrive backup
 
-`scripts/backup_to_onedrive.sh` tars this whole repo (including gitignored secrets like `.zsh-config-private.zsh`, excluding `.venv`, `.git`, and any `target/` build dirs) to `OneDrive-IBM/backups/zsh-config-backups/zsh-config-backup_<timestamp>.tgz`, keeping the 30 most recent archives.
+`scripts/backup_to_opendrive.sh` tars this whole repo (including gitignored secrets like `.zsh-config-private.zsh`, excluding `.venv`, `.git`, and any `target/` build dirs) to `OneDrive-IBM/backups/zsh-config-backups/zsh-config-backup_<timestamp>.tgz`, keeping the 30 most recent archives.
 
 A launchd agent (`~/Library/LaunchAgents/com.jessegoodier.zsh-config-backup.plist`) runs it every 6 hours and on login. Logs: `~/Library/Logs/zsh-config-backup.log`.
 

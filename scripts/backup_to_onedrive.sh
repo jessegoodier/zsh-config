@@ -25,10 +25,12 @@ else
 fi
 
 # Retention: keep the most recent $KEEP archives, delete the rest.
-mapfile -t archives < <(ls -1t "$DEST_DIR"/zsh-config-backup_*.tgz 2>/dev/null)
-if [ "${#archives[@]}" -gt "$KEEP" ]; then
-    for old in "${archives[@]:$KEEP}"; do
+# A read loop instead of mapfile, which macOS bash 3.2 does not provide.
+count=0
+while IFS= read -r old; do
+    count=$((count + 1))
+    if [ "$count" -gt "$KEEP" ]; then
         rm -f "$old"
         log "removed old backup $old"
-    done
-fi
+    fi
+done < <(ls -1t "$DEST_DIR"/zsh-config-backup_*.tgz 2>/dev/null)

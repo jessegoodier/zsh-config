@@ -83,6 +83,7 @@ colorama
 colorterm
 compdef
 compgen
+compinit
 compoundflag
 compreply
 conds
@@ -125,6 +126,7 @@ dbot
 dbuser
 debugf
 dedupe
+deepseek
 deit
 deluser
 deref
@@ -414,6 +416,7 @@ pythonpath
 pythonunbuffered
 pyvenv
 pyyaml
+qodo
 quantileofaverages
 quantileofmaxes
 rclone
@@ -547,7 +550,9 @@ xattr
 xlarge
 yaml
 yannh
+yazi
 yourkey
+zdotdir
 zstandard
 zulip
 zulipchat
