@@ -1,4 +1,12 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "packaging>=24.3.0",
+#     "rich>=14.0.0",
+# ]
+# ///
+
 """Update Python dependencies, GitHub Actions, Docker digests, and pre-commit hooks."""
 
 from __future__ import annotations
@@ -26,6 +34,7 @@ console = Console()
 ROOT = Path(__file__).resolve().parents[1]
 PYPROJECT = ROOT / "pyproject.toml"
 UV_LOCK = ROOT / "uv.lock"
+PRE_COMMIT = ROOT / ".pre-commit-config.yaml"
 
 
 def run(
@@ -171,6 +180,8 @@ def update_pyproject_constraints(
 
 
 def parse_uv_lock() -> dict[str, str]:
+    if not UV_LOCK.is_file():
+        return {}
     with UV_LOCK.open("rb") as handle:
         data = tomllib.load(handle)
     return {pkg["name"]: pkg["version"] for pkg in data.get("package", [])}
@@ -291,7 +302,7 @@ def update_python(
     *, allow_major: bool = False
 ) -> tuple[dict[str, str], list[tuple[str, str, str]]]:
     original = PYPROJECT.read_text(encoding="utf-8")
-    original_lock = UV_LOCK.read_bytes()
+    original_lock = UV_LOCK.read_bytes() if UV_LOCK.is_file() else None
     try:
         PYPROJECT.write_text(
             relax_constraints(original, allow_major=allow_major), encoding="utf-8"
@@ -308,7 +319,10 @@ def update_python(
         run(["uv", "lock"])
     except BaseException:
         PYPROJECT.write_text(original, encoding="utf-8")
-        UV_LOCK.write_bytes(original_lock)
+        if original_lock is None:
+            UV_LOCK.unlink(missing_ok=True)
+        else:
+            UV_LOCK.write_bytes(original_lock)
         raise
     run(["uv", "sync"])
     return parse_uv_lock(), changes
@@ -545,6 +559,21 @@ def print_hooks(changes: list[tuple[str, str, str]]) -> None:
     emit_section("hooks", [("pin", repo, old, new, "") for repo, old, new in changes])
 
 
+def skip_reason(ecosystem: str) -> str | None:
+    """Ecosystems with nothing to update stay out of the run.
+
+    This file's own dependencies are declared in its script header, so a
+    repository does not need a project lockfile for the script to run.
+    """
+    if ecosystem == "python" and not PYPROJECT.is_file():
+        return "no pyproject.toml"
+    if ecosystem == "docker" and not any((ROOT / "docker").glob("Dockerfile*")):
+        return "no Dockerfiles"
+    if ecosystem == "hooks" and not PRE_COMMIT.is_file():
+        return "no .pre-commit-config.yaml"
+    return None
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -558,7 +587,16 @@ def main() -> None:
         help="Allow Python upgrades across upper bounds.",
     )
     args = parser.parse_args()
-    ecosystems = {args.only} if args.only else {"python", "actions", "docker", "hooks"}
+    selected = [args.only] if args.only else ["python", "actions", "docker", "hooks"]
+    ecosystems: set[str] = set()
+    for ecosystem in selected:
+        reason = skip_reason(ecosystem)
+        if reason is None:
+            ecosystems.add(ecosystem)
+            continue
+        if args.only:
+            parser.error(f"{ecosystem} updates need a project file ({reason})")
+        console.print(f"[bold cyan]{ecosystem:<7}[/] [dim]skipped ({reason})[/]")
     required = {"uv"}
     if "actions" in ecosystems:
         required.add("gh")

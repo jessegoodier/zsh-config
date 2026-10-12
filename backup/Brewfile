@@ -1,27 +1,26 @@
-tap "alielsokary/tap"
-tap "apptio-pne/prism-arke", "git@github.com:Apptio-PNE/homebrew-arke.git"
+tap "apptio-pne/prism-arke", "git@github.com:Apptio-PNE/homebrew-arke.git", trusted: true
 tap "apptio-pne/tools"
-tap "aws/tap", trusted: true
-tap "azure/kubelogin", trusted: true
-tap "common-fate/granted"
+tap "aws/tap"
+tap "azure/kubelogin"
 tap "giammarco-ferranti/deja", "https://github.com/Giammarco-Ferranti/homebrew-deja"
 tap "janosmiko/tap"
 tap "jessegoodier/kdebug", trusted: true
 tap "jessegoodier/kge", trusted: true
 tap "jessegoodier/kpf", trusted: true
 tap "jessegoodier/kutils", trusted: true
-tap "mfuentesg/tap", trusted: true
-tap "norwoodj/tap"
+tap "norwoodj/tap", trusted: true
 tap "replicatedhq/replicated", trusted: true
 tap "skyhook-io/tap", trusted: true
+# Static analysis and lint tool, for (ba)sh scripts
+brew "shellcheck"
+# Static checker for GitHub Actions workflow files
+brew "actionlint"
 # GitOps Continuous Delivery for Kubernetes
 brew "argocd"
 # Simple API client (Postman-like) in your terminal
 brew "atac"
 # Tool for generating GNU Standards-compliant Makefiles
 brew "automake"
-# Cryptography and SSL/TLS Toolkit
-brew "openssl@3"
 # Securely store and access AWS credentials in development environments
 brew "aws-vault"
 # Library for command-line editing
@@ -32,10 +31,8 @@ brew "xz"
 brew "python@3.14"
 # Official Amazon AWS command-line interface
 brew "awscli"
-# YAML Parser
-brew "libyaml"
-# Microsoft Azure CLI 2.0
-brew "azure-cli"
+# Cryptography and SSL/TLS Toolkit
+brew "openssl@3"
 # Clone of cat(1) with syntax highlighting and Git integration
 brew "bat"
 # XML-based font configuration API for X Windows
@@ -52,6 +49,8 @@ brew "brew-gem"
 brew "btop"
 # Freely available high-quality data compressor
 brew "bzip2"
+# YAML Parser
+brew "libyaml"
 # Testing and linting Helm charts
 brew "chart-testing"
 # Ruby environment tool
@@ -60,6 +59,12 @@ brew "chruby"
 brew "cilium-cli"
 # Command-line tool to manage cert-manager
 brew "cmctl"
+# Portable Foreign Function Interface library
+brew "libffi"
+# Open-source, cross-platform JavaScript runtime environment
+brew "node"
+# See where your AI coding tokens go - by task, tool, model, and project
+brew "codeburn"
 # Container runtimes on MacOS (and Linux) with minimal setup
 brew "colima", restart_service: :changed
 # GNU File, Shell, and Text utilities
@@ -68,10 +73,6 @@ brew "coreutils"
 brew "cosign"
 # Tool for interacting with remote images and registries
 brew "crane"
-# Portable Foreign Function Interface library
-brew "libffi"
-# Open-source, cross-platform JavaScript runtime environment
-brew "node"
 # Spell checker for code
 brew "cspell"
 # Get a file from an HTTP, HTTPS or FTP server
@@ -92,6 +93,8 @@ brew "docker-credential-helper-ecr"
 brew "doggo"
 # More intuitive version of du in rust
 brew "dust"
+# Diff tool for YAML files, and sometimes JSON
+brew "dyff"
 # Simple command-line tool for creating clusters on Amazon EKS
 brew "eksctl"
 # Modern, maintained replacement for ls
@@ -108,6 +111,8 @@ brew "fzf"
 brew "gcc"
 # GitHub command-line tool
 brew "gh"
+# GIF image/animation creator/editor
+brew "gifsicle"
 # Distributed revision control system
 brew "git"
 # Syntax-highlighting pager for git and diff output
@@ -124,8 +129,6 @@ brew "go"
 brew "goreleaser"
 # Ping, but with a graph
 brew "gping"
-# Easiest way to access your cloud
-brew "granted"
 # Graph visualization software from AT&T and Bell Labs
 brew "graphviz"
 # GNU grep, egrep and fgrep
@@ -246,8 +249,6 @@ brew "ruff"
 brew "rustup"
 # Parallel S3 and local filesystem execution tool
 brew "s5cmd"
-# Static analysis and lint tool, for (ba)sh scripts
-brew "shellcheck"
 # Autoformat shell script source code
 brew "shfmt"
 # Work with remote images registries
@@ -272,6 +273,8 @@ brew "virtctl"
 brew "watch"
 # Internet file retriever
 brew "wget"
+# Linter for YAML files
+brew "yamllint"
 # Blazing fast terminal file manager written in Rust, based on async I/O
 brew "yazi"
 # Process YAML, JSON, XML, CSV and properties documents from the CLI
@@ -302,14 +305,18 @@ brew "jessegoodier/kpf/kpf", trusted: true
 brew "jessegoodier/kutils/kgc", trusted: true
 # List Kubernetes PersistentVolumes with PVCs, pods, zones, and sizes
 brew "jessegoodier/kutils/kgpv", trusted: true
-# ksd` is a tool, whose aim is help you to visualize in text plain your kubernetes secrets, either `yaml` or `json` outputs.
-brew "mfuentesg/tap/ksd", trusted: true
+# Load/unload environment variables based on $PWD
+brew "jessegoodier/versions/direnv@2.37.1", trusted: true
 # Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface.
 brew "replicatedhq/replicated/cli", trusted: true
 # Modern Kubernetes visibility — topology, traffic, and Helm management
 brew "skyhook-io/tap/radar", trusted: true
 # Command-line interface for 1Password
 cask "1password-cli"
+# Terminal interface for Antigravity agents
+cask "antigravity-cli"
+# Microsoft Azure CLI 2.0
+cask "azure-cli"
 # Display management tool
 cask "betterdisplay"
 # Native GUI for Homebrew casks
@@ -326,8 +333,8 @@ cask "font-meslo-lg-nerd-font"
 cask "gcloud-cli"
 # Terminal emulator that uses platform-native UI and GPU acceleration
 cask "ghostty"
-# Utility to hide menu bar items
-cask "hiddenbar"
+# Native desktop AI assistant from Google
+cask "google-gemini"
 # Command-line API client
 cask "ibm-cloud-cli"
 # Driver for SM76x with UI
@@ -342,6 +349,8 @@ cask "keepingyouawake"
 cask "maccy"
 # Tool to control external monitor brightness & volume
 cask "monitorcontrol"
+# Read-only disk space visualiser
+cask "neodisk"
 # Htop on steroids
 cask "neohtop"
 # Collaboration platform for API development
@@ -369,6 +378,7 @@ vscode "dbaeumer.vscode-eslint"
 vscode "emilast.logfilehighlighter"
 vscode "esbenp.prettier-vscode"
 vscode "firefox-devtools.vscode-firefox-debug"
+vscode "git-ai.git-ai-vscode"
 vscode "github.codespaces"
 vscode "github.github-vscode-theme"
 vscode "github.remotehub"
@@ -416,6 +426,7 @@ vscode "nefrob.vscode-just-syntax"
 vscode "njpwerner.autodocstring"
 vscode "oderwat.indent-rainbow"
 vscode "openai.chatgpt"
+vscode "openai.codex-audio"
 vscode "redhat.vscode-yaml"
 vscode "sitoi.ai-commit"
 vscode "streetsidesoftware.code-spell-checker"
@@ -444,10 +455,10 @@ go "github.com/jessegoodier/kgps"
 go "github.com/jessegoodier/kutils/cmd/kgpv"
 go "honnef.co/go/tools/cmd/staticcheck"
 uv "cldy-mcp-local"
+uv "github-actions-cli"
 uv "kdebug"
 uv "kge-kubectl-get-events"
 uv "kgng"
-uv "mcp-kubecost"
 uv "paloaltokeepalive"
 uv "pre-commit"
 uv "pyrefly"
@@ -456,6 +467,7 @@ krew "cost"
 krew "images"
 krew "oidc-login"
 krew "resource-capacity"
+npm "@google/gemini-cli"
 npm "bobshell"
 npm "react-devtools"
 npm "snyk"
