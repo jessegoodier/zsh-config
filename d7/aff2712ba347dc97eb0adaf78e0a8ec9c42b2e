@@ -1,0 +1,45 @@
+scripts/backup_to_onedrive.sh
+  s_70f98f1438816b::t_81ce818e907e6c 62,65
+  s_70f98f1438816b::t_14be57e39f2b60 42,53
+  s_784077ab15bb99::t_a6de3a36492a89 3-4
+  s_70f98f1438816b::t_5e2524fbebb463 12-24
+  s_70f98f1438816b::t_ba848ef1b0c85a 25-39,44-52,54
+  s_70f98f1438816b::t_547da157779088 40-41
+  s_70f98f1438816b::t_15cf259dc488bc 43
+.gitignore
+  h_cca6aa2712613d 243
+backup/Brewfile
+  h_cca6aa2712613d 1,11,14-17,34-35,52-53,66-67,96-97,114-115,276-277,308-309,316-319,336-337,352-353,381,429,458,470
+  h_cca6aa2712613d 3-4,62-65
+scripts/update_dependencies.py
+  h_cca6aa2712613d 1-9,37,183-184,305,322-325,562-576,590-599
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d7aff2712ba347dc97eb0adaf78e0a8ec9c42b2e",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_70f98f1438816b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "58216388-a4d6-436b-83fe-fae09170c8d7",
+        "model": "grok-4.7"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    },
+    "s_784077ab15bb99": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "912e8dd2-897f-467e-9ae1-635926cbb1f4",
+        "model": "grok-4.7"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
