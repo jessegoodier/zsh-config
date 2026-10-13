@@ -1,0 +1,22 @@
+README-howto.md
+  s_bbd406efd010c3::t_807ea54f305791 117-118
+scripts/backup_to_onedrive.sh
+  s_bbd406efd010c3::t_807ea54f305791 61-73
+  s_bbd406efd010c3::t_0345e6b0884f94 74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4a9e221a2957daaeb50193f2288d177729cd1320",
+  "prompts": {},
+  "sessions": {
+    "s_bbd406efd010c3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a132a1-3f7d-7501-ba24-3e9e095534d2",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
