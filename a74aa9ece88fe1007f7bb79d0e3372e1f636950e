@@ -1,0 +1,24 @@
+README-howto.md
+  s_784077ab15bb99::t_c64b2af86d1376 113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a74aa9ece88fe1007f7bb79d0e3372e1f636950e",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_784077ab15bb99": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "912e8dd2-897f-467e-9ae1-635926cbb1f4",
+        "model": "grok-4.7"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
