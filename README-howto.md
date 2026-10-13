@@ -114,6 +114,8 @@ zsh-bench needs the prompt to contain the hostname or the last path component. T
 
 A launchd agent (`~/Library/LaunchAgents/com.jessegoodier.zsh-config-backup.plist`) runs it every 6 hours and on login. Logs: `~/Library/Logs/zsh-config-backup.log`.
 
+Each archive also includes the saved zsh history as `zsh-history` at its root. The script uses an exported `HISTFILE` when set, otherwise `${XDG_CACHE_HOME:-$HOME/.cache}/zsh/history`. Missing history is logged and skipped. To restore it, copy `zsh-history` to your zsh history file while zsh sessions are closed. Only history already written to disk is included.
+
 - Force a run now: `launchctl kickstart -k gui/$(id -u)/com.jessegoodier.zsh-config-backup`
 - Check it's loaded: `launchctl print gui/$(id -u)/com.jessegoodier.zsh-config-backup`
 - Disable it: `launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.jessegoodier.zsh-config-backup.plist`

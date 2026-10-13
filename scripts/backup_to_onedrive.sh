@@ -58,7 +58,20 @@ fi
 timestamp="$(date +%Y-%m-%d_%H%M%S)"
 archive="$DEST_DIR/zsh-config-backup_${timestamp}.tgz"
 
-if tar --exclude=".venv" --exclude=".git" --exclude="target" -czf "$archive" -C "$(dirname "$SRC_DIR")" "$(basename "$SRC_DIR")"; then
+# launchd does not inherit zsh's unexported HISTFILE; use this setup's default.
+history_file="${HISTFILE:-${XDG_CACHE_HOME:-$HOME_DIR/.cache}/zsh/history}"
+history_args=()
+if [ -f "$history_file" ]; then
+    history_tmp="$(mktemp -d)"
+    trap 'rm -rf "$history_tmp"' EXIT
+    cp "$history_file" "$history_tmp/zsh-history"
+    history_args=(-C "$history_tmp" zsh-history)
+    log "including zsh history from $history_file"
+else
+    log "zsh history not found at $history_file; skipping"
+fi
+
+if tar --exclude=".venv" --exclude=".git" --exclude="target" -czf "$archive" -C "$(dirname "$SRC_DIR")" "$(basename "$SRC_DIR")" ${history_args[@]+"${history_args[@]}"}; then
     size="$(du -h "$archive" | cut -f1)"
     log "created $archive ($size)"
     say "created $archive ($size)"
