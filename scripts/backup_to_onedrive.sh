@@ -1,34 +1,92 @@
 #!/usr/bin/env bash
 set -euo pipefail
-HOME_DIR="/Users/jesse"
-SRC_DIR="$HOME_DIR/git-jesse/zsh-config"
-DEST_DIR="$HOME_DIR/Library/CloudStorage/OneDrive-IBM/backups/zsh-config-backups"
+HOME_DIR="${HOME:?HOME is not set}"
+SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_FILE="$HOME_DIR/Library/Logs/zsh-config-backup.log"
 KEEP=30
+
+mkdir -p "$(dirname "$LOG_FILE")"
 
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >>"$LOG_FILE"
 }
 
-mkdir -p "$DEST_DIR"
+# Scheduled runs stay in the log file. A terminal run also prints the result.
+say() {
+    if [ -t 1 ]; then
+        echo "$@"
+    fi
+}
+
+fail() {
+    log "FAILED: $*"
+    echo "FAILED: $*" >&2
+    exit 1
+}
+
+# Pick the OneDrive account that already stores these backups. Do not create it.
+cloud_root="$HOME_DIR/Library/CloudStorage"
+found=()
+onedrives=()
+for dir in "$cloud_root"/OneDrive*; do
+    [ -d "$dir" ] || continue
+    onedrives+=("$dir")
+    if [ -d "$dir/backups/zsh-config-backups" ]; then
+        found+=("$dir/backups/zsh-config-backups")
+    fi
+done
+
+if [ "${#found[@]}" -eq 1 ]; then
+    DEST_DIR="${found[0]}"
+elif [ "${#found[@]}" -gt 1 ]; then
+    echo "Multiple OneDrive folders already contain backups/zsh-config-backups:" >&2
+    printf '  %s\n' "${found[@]}" >&2
+    fail "multiple OneDrive folders contain backups/zsh-config-backups"
+else
+    echo "No OneDrive folder already contains backups/zsh-config-backups." >&2
+    echo "Looked in: $cloud_root/OneDrive*/backups/zsh-config-backups" >&2
+    if [ "${#onedrives[@]}" -eq 0 ]; then
+        echo "No OneDrive folders found under $cloud_root." >&2
+    else
+        echo "OneDrive folders found:" >&2
+        printf '  %s\n' "${onedrives[@]}" >&2
+        echo "Create backups/zsh-config-backups in the OneDrive you want to use, then re-run." >&2
+    fi
+    fail "no OneDrive folder contains backups/zsh-config-backups"
+fi
 
 timestamp="$(date +%Y-%m-%d_%H%M%S)"
 archive="$DEST_DIR/zsh-config-backup_${timestamp}.tgz"
 
-if tar --exclude=".venv" --exclude=".git" --exclude="target" -czf "$archive" -C "$(dirname "$SRC_DIR")" "$(basename "$SRC_DIR")"; then
+# launchd does not inherit zsh's unexported HISTFILE; use this setup's default.
+history_file="${HISTFILE:-${XDG_CACHE_HOME:-$HOME_DIR/.cache}/zsh/history}"
+history_args=()
+if [ -f "$history_file" ]; then
+    history_tmp="$(mktemp -d)"
+    trap 'rm -rf "$history_tmp"' EXIT
+    cp "$history_file" "$history_tmp/zsh-history"
+    history_args=(-C "$history_tmp" zsh-history)
+    log "including zsh history from $history_file"
+else
+    log "zsh history not found at $history_file; skipping"
+fi
+
+if tar --exclude=".venv" --exclude=".git" --exclude="target" -czf "$archive" -C "$(dirname "$SRC_DIR")" "$(basename "$SRC_DIR")" ${history_args[@]+"${history_args[@]}"}; then
     size="$(du -h "$archive" | cut -f1)"
     log "created $archive ($size)"
+    say "created $archive ($size)"
 else
-    log "FAILED to create $archive"
     rm -f "$archive"
-    exit 1
+    fail "could not create $archive"
 fi
 
 # Retention: keep the most recent $KEEP archives, delete the rest.
-mapfile -t archives < <(ls -1t "$DEST_DIR"/zsh-config-backup_*.tgz 2>/dev/null)
-if [ "${#archives[@]}" -gt "$KEEP" ]; then
-    for old in "${archives[@]:$KEEP}"; do
+# A read loop instead of mapfile, which macOS bash 3.2 does not provide.
+count=0
+while IFS= read -r old; do
+    count=$((count + 1))
+    if [ "$count" -gt "$KEEP" ]; then
         rm -f "$old"
         log "removed old backup $old"
-    done
-fi
+    fi
+done < <(ls -1t "$DEST_DIR"/zsh-config-backup_*.tgz 2>/dev/null)
