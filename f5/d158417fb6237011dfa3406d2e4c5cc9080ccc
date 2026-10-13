@@ -1,0 +1,21 @@
+scripts/backup_to_onedrive.sh
+  s_bbd406efd010c3::t_bbd68636c7d3fa 8-9
+scripts/update_dependencies.py
+  s_bbd406efd010c3::t_bbd68636c7d3fa 41,51-52,322,357,377-379,381-387,393-394,439-441
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f5d158417fb6237011dfa3406d2e4c5cc9080ccc",
+  "prompts": {},
+  "sessions": {
+    "s_bbd406efd010c3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a132a1-3f7d-7501-ba24-3e9e095534d2",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
