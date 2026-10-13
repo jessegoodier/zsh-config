@@ -38,7 +38,7 @@ PRE_COMMIT = ROOT / ".pre-commit-config.yaml"
 
 
 def run(
-    command: list[str], *, cwd: Path | None = None
+    command: list[str], *, cwd: Path | None = None, allow_not_found: bool = False
 ) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
         command,
@@ -48,6 +48,8 @@ def run(
         check=False,
     )
     if result.returncode != 0:
+        if allow_not_found and "(HTTP 404)" in result.stderr:
+            return result
         console.print(f"[bold red]Command failed:[/bold red] {' '.join(command)}")
         if result.stdout.strip():
             console.print(result.stdout)
@@ -317,6 +319,7 @@ def update_python(
             versions, original=original, allow_major=allow_major
         )
         run(["uv", "lock"])
+        run(["uv", "sync"])
     except BaseException:
         PYPROJECT.write_text(original, encoding="utf-8")
         if original_lock is None:
@@ -324,7 +327,6 @@ def update_python(
         else:
             UV_LOCK.write_bytes(original_lock)
         raise
-    run(["uv", "sync"])
     return parse_uv_lock(), changes
 
 
@@ -352,7 +354,7 @@ def action_comment(existing: str, tag: str) -> str:
 def update_actions() -> list[tuple[str, str, str, str]]:
     """Return (workflow, action, old ref, new ref) for each pin that moved."""
     changes: list[tuple[str, str, str, str]] = []
-    releases: dict[str, tuple[str, str]] = {}
+    releases: dict[str, tuple[str, str] | None] = {}
     for path in sorted((ROOT / ".github/workflows").glob("*")):
         if path.suffix not in (".yml", ".yaml"):
             continue
@@ -372,14 +374,24 @@ def update_actions() -> list[tuple[str, str, str, str]]:
             elif not VERSION_IN_COMMENT_RE.search(match["comment"]):
                 return match[0]
             if repo not in releases:
-                release = json.loads(
-                    run(["gh", "api", f"repos/{repo}/releases/latest"]).stdout
+                latest = run(
+                    ["gh", "api", f"repos/{repo}/releases/latest"],
+                    allow_not_found=True,
                 )
+                if latest.returncode != 0:
+                    console.print(
+                        f"[yellow]actions: no latest release for {repo}, skipped[/]"
+                    )
+                    releases[repo] = None
+                    return match[0]
+                release = json.loads(latest.stdout)
                 tag = release["tag_name"]
                 ref = json.loads(
                     run(["gh", "api", f"repos/{repo}/commits/{tag}"]).stdout
                 )
                 releases[repo] = (tag, ref["sha"])
+            if releases[repo] is None:
+                return match[0]
             tag, sha = releases[repo]
             comment = action_comment(match["comment"], tag)
             updated = f"{match['prefix']}{action}@{sha}{comment}"
@@ -424,7 +436,9 @@ def image_digest(image: str) -> str:
             headers={
                 "Authorization": f"Bearer {token}",
                 "Accept": "application/vnd.oci.image.index.v1+json, "
-                "application/vnd.docker.distribution.manifest.list.v2+json",
+                "application/vnd.docker.distribution.manifest.list.v2+json, "
+                "application/vnd.oci.image.manifest.v1+json, "
+                "application/vnd.docker.distribution.manifest.v2+json",
             },
         )
         with urllib.request.urlopen(request, timeout=30) as response:

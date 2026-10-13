@@ -5,6 +5,8 @@ SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_FILE="$HOME_DIR/Library/Logs/zsh-config-backup.log"
 KEEP=30
 
+mkdir -p "$(dirname "$LOG_FILE")"
+
 log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >>"$LOG_FILE"
 }
