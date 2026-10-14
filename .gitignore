@@ -1,6 +1,5 @@
 .zsh-config-private.zsh
 .DS_Store
-uv.lock
 
 
 # Timestamped installer backups (user configs; may contain secrets)

@@ -3,24 +3,28 @@ name = "zsh-config"
 version = "0.1.0"
 description = "python tools for my profile"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
-    "boto3",
+    "boto3>=1.43.113",
     "botocore[crt]",
     "fastmcp",
-    "pre-commit",
     "pygithub",
-    "pyrefly",
-    "pytest",
     "pyyaml",
     "requests",
     "rich",
     "urllib3",
 ]
 
-[project.scripts]
-zsh-config = "zsh_config:main"
+[dependency-groups]
+dev = [
+    "pre-commit>=4.7.0",
+    "pyrefly",
+    "pytest",
+    "ruff",
+]
 
-[build-system]
-requires = ["uv_build>=0.12.5,<0.13.0"]
-build-backend = "uv_build"
+[tool.uv]
+package = false
+
+[tool.ruff]
+target-version = "py314"

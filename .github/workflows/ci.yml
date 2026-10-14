@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Run pre-commit hooks
+        env:
+          # CI runs on a detached merge ref, so the branch guard does not apply.
+          SKIP: prevent-protected-branch
+        run: uv run --locked pre-commit run --all-files --show-diff-on-failure
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Ruff check
+        run: uv run --locked ruff check scripts src
+      - name: Ruff format
+        run: uv run --locked ruff format --check scripts src
+      - name: Shellcheck
+        run: shellcheck --severity=warning scripts/*.sh .config/fzf/preview.sh
+      - name: Zsh syntax
+        run: |
+          sudo apt-get install -y --no-install-recommends zsh
+          git ls-files installer.sh '.config/zsh/*.zsh' '.config/zsh/.zshrc' '.config/zsh/.zshenv' .zshenv \
+            | xargs -n1 zsh -n

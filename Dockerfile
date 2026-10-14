@@ -1,4 +1,6 @@
-FROM ghcr.io/jessegoodier/toolbox-homebrew:latest
+# syntax=docker/dockerfile:1
+
+FROM ghcr.io/jessegoodier/toolbox-homebrew:latest # NO_PIN
 
 COPY --chown=toolbox:toolbox . /home/toolbox/zsh-config-repo
 
