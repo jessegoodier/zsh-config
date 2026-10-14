@@ -7,13 +7,55 @@
 # ]
 # ///
 
-"""Update Python dependencies, GitHub Actions, Docker digests, and pre-commit hooks."""
+"""Update Python dependencies, GitHub Actions, Docker digests, and pre-commit hooks.
+
+USAGE
+    update_dependencies.py [--dry-run] [--only ECOSYSTEM] [--allow-major]
+
+    Run from anywhere inside a repo checkout; the repo root is the parent of the
+    directory holding this script. Ecosystems with nothing to update are skipped.
+    Needs `uv`; also `gh` (actions) and `docker` (images) when those are used.
+
+ECOSYSTEMS
+    python   pyproject.toml + uv.lock: relax exact pins, `uv lock --upgrade`,
+             then raise the minimum versions in pyproject.toml.
+    actions  every `uses: owner/repo@ref` in .github/**/*.yml (workflows and
+             composite actions) is pinned to a commit SHA with a `# vX.Y.Z` comment.
+    docker   every FROM line in Dockerfile*, *.Dockerfile, Containerfile (found
+             anywhere in the repo) is pinned to an image digest.
+    hooks    `pre-commit autoupdate --freeze`.
+
+OPTIONS
+    --dry-run      Show what would change and leave every file as it was.
+    --only X       Run a single ecosystem (python, actions, docker, hooks).
+    --allow-major  Allow major upgrades. Without it, a new major release of an
+                   action is reported as "held" and the current version is only
+                   pinned in place; Python upper bounds (<N) are kept.
+
+NO_PIN
+    Everything is pinned unless the line opts out. Put NO_PIN in a comment on the
+    same line, or in a comment on the line directly above. Any comment style
+    works (#, //, ;, --, /* */, <!-- -->):
+
+        - uses: actions/checkout@v7  # NO_PIN
+        # NO_PIN keep floating so auto-updates do not break our scripts
+        - uses: actions/checkout@v7
+        FROM python:3.13-slim  # NO_PIN
+
+    Opted-out lines are left untouched and listed in the output.
+
+NOTES
+    Reusable workflows (owner/repo/.github/workflows/x.yml@ref) are pinned to the
+    commit of their current ref, never moved to the repo's latest release.
+    Branch refs (@main) are deliberate and left alone.
+"""
 
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -301,10 +343,18 @@ def emit_section(
 
 
 def update_python(
-    *, allow_major: bool = False
+    *, allow_major: bool = False, dry_run: bool = False
 ) -> tuple[dict[str, str], list[tuple[str, str, str]]]:
     original = PYPROJECT.read_text(encoding="utf-8")
     original_lock = UV_LOCK.read_bytes() if UV_LOCK.is_file() else None
+
+    def restore() -> None:
+        PYPROJECT.write_text(original, encoding="utf-8")
+        if original_lock is None:
+            UV_LOCK.unlink(missing_ok=True)
+        else:
+            UV_LOCK.write_bytes(original_lock)
+
     try:
         PYPROJECT.write_text(
             relax_constraints(original, allow_major=allow_major), encoding="utf-8"
@@ -318,16 +368,16 @@ def update_python(
         changes = update_pyproject_constraints(
             versions, original=original, allow_major=allow_major
         )
-        run(["uv", "lock"])
-        run(["uv", "sync"])
+        if not dry_run:
+            run(["uv", "lock"])
+            run(["uv", "sync"])
+        after = parse_uv_lock()
     except BaseException:
-        PYPROJECT.write_text(original, encoding="utf-8")
-        if original_lock is None:
-            UV_LOCK.unlink(missing_ok=True)
-        else:
-            UV_LOCK.write_bytes(original_lock)
+        restore()
         raise
-    return parse_uv_lock(), changes
+    if dry_run:
+        restore()
+    return after, changes
 
 
 ACTION_RE = re.compile(
@@ -335,8 +385,70 @@ ACTION_RE = re.compile(
     r"(?P<ref>[\w.-]+)(?P<comment>[^\n]*)",
     re.MULTILINE,
 )
-IMAGE_RE = re.compile(r"(?P<image>[\w./-]+:[\w.-]+)@sha256:[0-9a-f]{64}")
-VERSION_IN_COMMENT_RE = re.compile(r"v?\d+\.\d+\.\d+")
+FROM_RE = re.compile(
+    r"^(?P<prefix>[ \t]*FROM[ \t]+(?:--\S+[ \t]+)*)(?P<ref>[^\s@]+)"
+    r"(?:@(?P<digest>sha256:[0-9a-f]{64}))?(?P<rest>[^\n]*)",
+    re.MULTILINE | re.IGNORECASE,
+)
+STAGE_RE = re.compile(r"\bAS[ \t]+(\S+)", re.IGNORECASE)
+VERSION_IN_COMMENT_RE = re.compile(
+    r"(?<![\w.])(?:v\d+(?:\.\d+){0,2}|\d+\.\d+(?:\.\d+)?)\b", re.IGNORECASE
+)
+
+SKIP_DIRS = {".git", ".venv", "venv", "node_modules", ".tox", "__pycache__"}
+COMMENT_STARTS = ("#", "//", ";", "--", "/*", "*", "<!--", "%", "'", "REM ")
+# (file, name, ref) for every line left alone because of NO_PIN.
+NO_PIN_SKIPS: list[tuple[str, str, str]] = []
+
+
+def find_files(match) -> list[Path]:
+    """Tracked and untracked-but-not-ignored files, or a plain walk outside git."""
+    listed = subprocess.run(
+        ["git", "ls-files", "-co", "--exclude-standard", "-z"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if listed.returncode == 0:
+        paths = (ROOT / name for name in listed.stdout.split("\0") if name)
+        return sorted(p for p in paths if p.is_file() and match(p.name))
+    found: list[Path] = []
+    for dirpath, dirnames, filenames in os.walk(ROOT):
+        dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS)
+        found += [Path(dirpath) / n for n in sorted(filenames) if match(n)]
+    return found
+
+
+def is_dockerfile(name: str) -> bool:
+    lower = name.lower()
+    return lower.startswith(("dockerfile", "containerfile")) or lower.endswith(
+        ".dockerfile"
+    )
+
+
+def find_dockerfiles() -> list[Path]:
+    return find_files(is_dockerfile)
+
+
+def find_action_files() -> list[Path]:
+    return [
+        p
+        for p in find_files(lambda n: n.endswith((".yml", ".yaml")))
+        if p.relative_to(ROOT).parts[:1] == (".github",)
+    ]
+
+
+def has_no_pin(text: str, pos: int) -> bool:
+    """NO_PIN on the line holding `pos`, or in a comment on the line above."""
+    start = text.rfind("\n", 0, pos) + 1
+    end = text.find("\n", pos)
+    if "NO_PIN" in text[start : end if end != -1 else len(text)]:
+        return True
+    if start == 0:
+        return False
+    above = text[: start - 1].rsplit("\n", 1)[-1].strip()
+    return "NO_PIN" in above and above.startswith(COMMENT_STARTS)
 
 
 def action_comment(existing: str, tag: str) -> str:
@@ -351,68 +463,103 @@ def action_comment(existing: str, tag: str) -> str:
     return f" # {tag}"
 
 
-def update_actions() -> list[tuple[str, str, str, str]]:
-    """Return (workflow, action, old ref, new ref) for each pin that moved."""
-    changes: list[tuple[str, str, str, str]] = []
-    releases: dict[str, tuple[str, str] | None] = {}
-    for path in sorted((ROOT / ".github/workflows").glob("*")):
-        if path.suffix not in (".yml", ".yaml"):
-            continue
+def update_actions(
+    *, dry_run: bool = False, allow_major: bool = False
+) -> list[tuple[str, str, str, str, str]]:
+    """Return table rows (kind, action, old, new, note) for each pin that moved."""
+    rows: list[tuple[str, str, str, str, str]] = []
+    latest: dict[str, tuple[str, str] | None] = {}
+    commits: dict[tuple[str, str], str] = {}
 
-        def replace(match: re.Match[str], workflow: Path = path) -> str:
+    def commit_sha(repo: str, ref: str) -> str:
+        if (repo, ref) not in commits:
+            data = json.loads(run(["gh", "api", f"repos/{repo}/commits/{ref}"]).stdout)
+            commits[(repo, ref)] = data["sha"]
+        return commits[(repo, ref)]
+
+    def latest_release(repo: str) -> tuple[str, str] | None:
+        if repo not in latest:
+            result = run(
+                ["gh", "api", f"repos/{repo}/releases/latest"], allow_not_found=True
+            )
+            if result.returncode != 0:
+                console.print(
+                    f"[yellow]actions: no latest release for {repo}, skipped[/]"
+                )
+                latest[repo] = None
+            else:
+                tag = json.loads(result.stdout)["tag_name"]
+                latest[repo] = (tag, commit_sha(repo, tag))
+        return latest[repo]
+
+    for path in find_action_files():
+        rel = str(path.relative_to(ROOT))
+        original = path.read_text()
+
+        def replace(match: re.Match[str], rel: str = rel, text: str = original) -> str:
             action = match["action"]
+            ref = match["ref"]
             repo = "/".join(action.split("/")[:2])
             if repo.lower() in {"kubecost/kc-pr-agent", "codium-ai/pr-agent"}:
                 return match[0]
-            pinned_sha = re.fullmatch(r"[0-9a-f]{40}", match["ref"])
-            if not pinned_sha:
+            if has_no_pin(text, match.start("action")):
+                NO_PIN_SKIPS.append((rel, action, ref))
+                return match[0]
+            pinned = re.fullmatch(r"[0-9a-f]{40}", ref) is not None
+            if pinned:
+                label = VERSION_IN_COMMENT_RE.search(match["comment"])
+                if not label:
+                    return match[0]
+                old = label.group(0)
+            else:
+                old = ref
+            try:
+                current = Version(old)
+            except InvalidVersion:
+                # Branch refs are deliberate selections, not release pins.
+                return match[0]
+
+            # Reusable workflows are pinned to their own ref, not the repo's latest release.
+            in_place = ".github/workflows/" in action
+            held = False
+            tag = sha = ""
+            if not in_place:
+                release = latest_release(repo)
+                if release is None:
+                    return match[0]
+                tag, sha = release
                 try:
-                    current = Version(match["ref"].removeprefix("v"))
+                    newest = Version(tag)
                 except InvalidVersion:
-                    # Branch refs are deliberate selections, not release pins.
-                    return match[0]
-            elif not VERSION_IN_COMMENT_RE.search(match["comment"]):
-                return match[0]
-            if repo not in releases:
-                latest = run(
-                    ["gh", "api", f"repos/{repo}/releases/latest"],
-                    allow_not_found=True,
-                )
-                if latest.returncode != 0:
-                    console.print(
-                        f"[yellow]actions: no latest release for {repo}, skipped[/]"
+                    # Latest release is not an action version (e.g. a tool bundle).
+                    newest = None
+                if newest is None or newest < current:
+                    in_place = True
+                    tag = ""
+                elif newest.major > current.major and not allow_major:
+                    rows.append(
+                        ("major", action, old, tag, f"{rel} held, use --allow-major")
                     )
-                    releases[repo] = None
+                    in_place = held = True
+                    tag = ""
+            if in_place:
+                if pinned:
                     return match[0]
-                release = json.loads(latest.stdout)
-                tag = release["tag_name"]
-                ref = json.loads(
-                    run(["gh", "api", f"repos/{repo}/commits/{tag}"]).stdout
-                )
-                releases[repo] = (tag, ref["sha"])
-            if releases[repo] is None:
-                return match[0]
-            tag, sha = releases[repo]
-            comment = action_comment(match["comment"], tag)
-            updated = f"{match['prefix']}{action}@{sha}{comment}"
+                tag, sha = ref, commit_sha(repo, ref)
+            updated = f"{match['prefix']}{action}@{sha}{action_comment(match['comment'], tag)}"
             if updated == match[0]:
                 return match[0]
-            if pinned_sha:
-                old_label = VERSION_IN_COMMENT_RE.search(match["comment"])
-                old = old_label.group(0) if old_label else match["ref"][:7]
-                new = tag
-            else:
-                old = match["ref"]
-                same_release = current == Version(tag.removeprefix("v"))
-                new = sha[:12] if same_release else tag
-            changes.append((str(workflow.relative_to(ROOT)), action, old, new))
+            if not held:
+                same_release = not pinned and current == Version(tag)
+                new = sha[:12] if same_release or in_place else tag
+                kind = bump_type(old, tag) or "pin"
+                rows.append((kind, action, old, new, rel))
             return updated
 
-        original = path.read_text()
         updated = ACTION_RE.sub(replace, original)
-        if updated != original:
+        if updated != original and not dry_run:
             path.write_text(updated)
-    return changes
+    return rows
 
 
 def image_digest(image: str) -> str:
@@ -459,36 +606,52 @@ def image_digest(image: str) -> str:
     return manifest["digest"]
 
 
-def update_docker() -> list[tuple[str, str, str, str]]:
-    """Refresh immutable digests. Return (dockerfile, image, old digest, new digest)."""
-    changes: list[tuple[str, str, str, str]] = []
+def update_docker(*, dry_run: bool = False) -> list[tuple[str, str, str, str, str]]:
+    """Pin or refresh image digests. Return rows (kind, image, old, new, dockerfile)."""
+    rows: list[tuple[str, str, str, str, str]] = []
     digests: dict[str, str] = {}
-    for path in sorted((ROOT / "docker").glob("Dockerfile*")):
+    for path in find_dockerfiles():
+        rel = str(path.relative_to(ROOT))
+        original = path.read_text()
+        stages: set[str] = set()
 
-        def replace(match: re.Match[str], dockerfile: Path = path) -> str:
-            image = match["image"]
+        def replace(
+            match: re.Match[str],
+            rel: str = rel,
+            text: str = original,
+            stages: set[str] = stages,
+        ) -> str:
+            ref = match["ref"]
+            is_stage = ref.lower() in stages
+            stages.update(s.lower() for s in STAGE_RE.findall(match["rest"]))
+            if is_stage or ref.lower() == "scratch" or "$" in ref:
+                return match[0]
+            if has_no_pin(text, match.start()):
+                NO_PIN_SKIPS.append((rel, ref, match["digest"] or "unpinned"))
+                return match[0]
+            image = ref if ":" in ref.rsplit("/", 1)[-1] else f"{ref}:latest"
             if image not in digests:
                 digest = image_digest(image)
                 if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
                     raise ValueError(f"Invalid registry digest for {image}: {digest}")
                 digests[image] = digest
-            updated = f"{image}@{digests[image]}"
-            if updated != match[0]:
-                changes.append(
-                    (
-                        str(dockerfile.relative_to(ROOT)),
-                        image,
-                        match[0].split("@", 1)[1],
-                        digests[image],
-                    )
+            if match["digest"] == digests[image] and image == ref:
+                return match[0]
+            rows.append(
+                (
+                    "digest" if match["digest"] else "pin",
+                    image,
+                    match["digest"] or "unpinned",
+                    digests[image],
+                    rel,
                 )
-            return updated
+            )
+            return f"{match['prefix']}{image}@{digests[image]}{match['rest']}"
 
-        original = path.read_text()
-        updated = IMAGE_RE.sub(replace, original)
-        if updated != original:
+        updated = FROM_RE.sub(replace, original)
+        if updated != original and not dry_run:
             path.write_text(updated)
-    return changes
+    return rows
 
 
 HOOK_UPDATE_RE = re.compile(
@@ -504,8 +667,13 @@ def repo_label(repo: str) -> str:
     return repo
 
 
-def update_hooks() -> list[tuple[str, str, str]]:
-    result = run(["uv", "run", "pre-commit", "autoupdate", "--freeze"])
+def update_hooks(*, dry_run: bool = False) -> list[tuple[str, str, str]]:
+    original = PRE_COMMIT.read_bytes()
+    try:
+        result = run(["uv", "run", "pre-commit", "autoupdate", "--freeze"])
+    finally:
+        if dry_run:
+            PRE_COMMIT.write_bytes(original)
     changes: list[tuple[str, str, str]] = []
     for line in result.stdout.splitlines():
         match = HOOK_UPDATE_RE.search(line)
@@ -555,18 +723,19 @@ def print_python(
     emit_section("python", rows, extra=extra)
 
 
-def print_actions(changes: list[tuple[str, str, str, str]]) -> None:
-    emit_section(
-        "actions",
-        [("pin", action, old, new, path) for path, action, old, new in changes],
-    )
+def print_actions(rows: list[tuple[str, str, str, str, str]]) -> None:
+    emit_section("actions", rows)
 
 
-def print_docker(changes: list[tuple[str, str, str, str]]) -> None:
-    emit_section(
-        "docker",
-        [("digest", image, old, new, path) for path, image, old, new in changes],
-    )
+def print_docker(rows: list[tuple[str, str, str, str, str]]) -> None:
+    emit_section("docker", rows)
+
+
+def print_no_pin() -> None:
+    for path, name, ref in NO_PIN_SKIPS:
+        console.print(
+            f"[bold yellow]NO_PIN[/]  {name}@{short_rev(ref)} left as-is [dim]({path})[/]"
+        )
 
 
 def print_hooks(changes: list[tuple[str, str, str]]) -> None:
@@ -581,7 +750,9 @@ def skip_reason(ecosystem: str) -> str | None:
     """
     if ecosystem == "python" and not PYPROJECT.is_file():
         return "no pyproject.toml"
-    if ecosystem == "docker" and not any((ROOT / "docker").glob("Dockerfile*")):
+    if ecosystem == "actions" and not find_action_files():
+        return "no .github workflow files"
+    if ecosystem == "docker" and not find_dockerfiles():
         return "no Dockerfiles"
     if ecosystem == "hooks" and not PRE_COMMIT.is_file():
         return "no .pre-commit-config.yaml"
@@ -589,7 +760,14 @@ def skip_reason(ecosystem: str) -> str | None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would change without modifying any file.",
+    )
     parser.add_argument(
         "--only",
         choices=("python", "actions", "docker", "hooks"),
@@ -598,7 +776,7 @@ def main() -> None:
     parser.add_argument(
         "--allow-major",
         action="store_true",
-        help="Allow Python upgrades across upper bounds.",
+        help="Allow major upgrades (Python upper bounds, new action majors).",
     )
     args = parser.parse_args()
     selected = [args.only] if args.only else ["python", "actions", "docker", "hooks"]
@@ -619,11 +797,15 @@ def main() -> None:
     for tool in sorted(required):
         if shutil.which(tool) is None:
             parser.error(f"Required tool not found: {tool}")
+    if args.dry_run:
+        console.print("[bold magenta]dry run[/] [dim]no files will be changed[/]")
     if "python" in ecosystems:
         with console.status("[cyan]python[/]", spinner="dots"):
             python_before = parse_uv_lock()
             python_direct = parse_pyproject_direct()
-            python_after, changes = update_python(allow_major=args.allow_major)
+            python_after, changes = update_python(
+                allow_major=args.allow_major, dry_run=args.dry_run
+            )
         print_python(
             python_direct=python_direct,
             python_before=python_before,
@@ -632,16 +814,19 @@ def main() -> None:
         )
     if "actions" in ecosystems:
         with console.status("[cyan]actions[/]", spinner="dots"):
-            action_changes = update_actions()
+            action_changes = update_actions(
+                dry_run=args.dry_run, allow_major=args.allow_major
+            )
         print_actions(action_changes)
     if "docker" in ecosystems:
         with console.status("[cyan]docker[/]", spinner="dots"):
-            docker_changes = update_docker()
+            docker_changes = update_docker(dry_run=args.dry_run)
         print_docker(docker_changes)
     if "hooks" in ecosystems:
         with console.status("[cyan]hooks[/]", spinner="dots"):
-            hook_changes = update_hooks()
+            hook_changes = update_hooks(dry_run=args.dry_run)
         print_hooks(hook_changes)
+    print_no_pin()
 
 
 if __name__ == "__main__":

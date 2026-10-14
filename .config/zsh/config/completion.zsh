@@ -2,6 +2,11 @@
 setopt COMPLETE_IN_WORD ALWAYS_TO_END AUTO_PARAM_SLASH PATH_DIRS
 unsetopt MENU_COMPLETE LIST_BEEP
 
+# AWS CLI's zsh completion is `complete -C aws_completer aws`, which compsys
+# invokes as `_bash_complete`. ez-compinit persists that binding in zcompdump
+# without loading bashcompinit, so tab fails with "command not found: _bash_complete".
+autoload -Uz bashcompinit && bashcompinit
+
 zstyle ':completion:*:git-checkout:*' sort false
 zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}

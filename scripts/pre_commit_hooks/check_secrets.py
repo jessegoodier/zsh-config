@@ -49,7 +49,9 @@ def should_skip(filepath: str) -> bool:
     return any(re.search(pattern, filepath) for pattern in SKIP_PATTERNS)
 
 
-def check_file(filepath: str, ignore_yaml_keys: set[str] | None = None) -> list[tuple[int, str]]:
+def check_file(
+    filepath: str, ignore_yaml_keys: set[str] | None = None
+) -> list[tuple[int, str]]:
     """Check a file for potential secrets without retaining secret values."""
     findings = []
     ignore_yaml_keys = ignore_yaml_keys or set()
@@ -71,15 +73,17 @@ def check_file(filepath: str, ignore_yaml_keys: set[str] | None = None) -> list[
                 for pattern, secret_type in SECRET_PATTERNS:
                     if re.search(pattern, line):
                         findings.append((line_num, secret_type))
-    except Exception:
+    except OSError, UnicodeDecodeError:
         # Skip files that can't be read
-        pass
+        return findings
     return findings
 
 
 def main() -> int:
     """Main entry point."""
-    parser = argparse.ArgumentParser(description="Check for accidentally committed secrets in files.")
+    parser = argparse.ArgumentParser(
+        description="Check for accidentally committed secrets in files."
+    )
     parser.add_argument("filenames", nargs="*", help="Files to check")
     parser.add_argument(
         "--exclude-files",
@@ -126,7 +130,9 @@ def main() -> int:
 
     if found_secrets:
         print("\n❌ Commit blocked: potential secrets detected")
-        print("If these are false positives, add them to .gitignore or update the patterns")
+        print(
+            "If these are false positives, add them to .gitignore or update the patterns"
+        )
         return 1
 
     return 0

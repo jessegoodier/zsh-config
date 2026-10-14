@@ -23,7 +23,7 @@ def check_file(filename: str, allow_multiple: bool = False) -> tuple[bool, str |
         return True, None
     except yaml.YAMLError as e:
         return False, str(e)
-    except Exception as e:
+    except (OSError, UnicodeDecodeError) as e:
         return False, f"Error reading file: {e}"
 
 

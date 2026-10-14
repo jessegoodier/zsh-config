@@ -99,7 +99,7 @@ def main() -> int:
             if file_changed:
                 print(f"Sorting {filename}")
             changed |= file_changed
-        except (OSError, UnicodeError, ValueError):
+        except OSError, UnicodeError, ValueError:
             return 1
     return int(changed)
 

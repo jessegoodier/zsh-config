@@ -432,6 +432,7 @@ relabelings
 relativenumber
 replicaset
 replicasets
+replicatedhq
 replicationcontrollers
 reserialized
 rgba

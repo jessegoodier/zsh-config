@@ -11,7 +11,9 @@ ZERO_SHA = "0" * 40
 
 
 def git(args: list[str]) -> str:
-    return subprocess.check_output(["git", *args], text=True, stderr=subprocess.DEVNULL).strip()
+    return subprocess.check_output(
+        ["git", *args], text=True, stderr=subprocess.DEVNULL
+    ).strip()
 
 
 def current_branch() -> str | None:
@@ -33,7 +35,9 @@ def protected_ref_name(ref: str) -> str | None:
 def main() -> int:
     branch = current_branch()
     if branch in PROTECTED_BRANCHES:
-        print(f"Refusing to commit on protected branch '{branch}'. Create a feature branch first.")
+        print(
+            f"Refusing to commit on protected branch '{branch}'. Create a feature branch first."
+        )
         return 1
 
     blocked_pushes: list[str] = []
@@ -50,7 +54,9 @@ def main() -> int:
 
     if blocked_pushes:
         branches = ", ".join(sorted(set(blocked_pushes)))
-        print(f"Refusing to push directly to protected branch: {branches}. Open a PR instead.")
+        print(
+            f"Refusing to push directly to protected branch: {branches}. Open a PR instead."
+        )
         return 1
 
     return 0
