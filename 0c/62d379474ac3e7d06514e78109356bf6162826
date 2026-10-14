@@ -1,0 +1,82 @@
+pyproject.toml
+  s_92da2e17572f1a::t_8f416a29af0ce9 6,18-19,21-27,29-30
+  h_cca6aa2712613d 8,20
+iterm2/zsh-config.json
+  s_92da2e17572f1a::t_c8e6d8a4bb5c4a 737
+.github/workflows/ci.yml
+  s_92da2e17572f1a::t_8e86b820070957 1-17,20-23,25-28,31,33,35,37-39,41
+  s_92da2e17572f1a::t_55c5e833b4b8fb 18-19,29-30
+  s_92da2e17572f1a::t_8f416a29af0ce9 24,32,34
+  s_92da2e17572f1a::t_c8e6d8a4bb5c4a 36,40
+scripts/pre_commit_hooks/check_yaml.py
+  s_92da2e17572f1a::t_c8e6d8a4bb5c4a 26
+scripts/update_dependencies.py
+  s_92da2e17572f1a::t_0c5ed1dd2547ee 394-396
+  s_92da2e17572f1a::t_3c74fc470d46f6 405-415,435-439
+  s_92da2e17572f1a::t_9f9962d2ac2040 10-51,58
+  s_92da2e17572f1a::t_385c0944bc0690 466-497,499,501,505-511,513-519,521-523,525-532,540-541,544-546,548,553-556,560,562
+  s_92da2e17572f1a::t_fea32c28f4869f 625,627
+  s_92da2e17572f1a::t_58238670dda808 388-393,397-404,416-434,440-451
+  s_92da2e17572f1a::t_89d2c352e864e7 346,350-357,371-374,376,378-380,549,609,619-622,670-676,726-727,730-738,753-755,763-770,779,800-801,806-808,817-819,823,827,829
+  s_92da2e17572f1a::t_69e448053059fe 610-611,613-618,623-624,626,628-632,638-646,648-649,651-652,654
+  s_92da2e17572f1a::t_1cca7de986bc77 524,543,552
+  s_92da2e17572f1a::t_3490701adb3609 534-539
+  s_92da2e17572f1a::t_78d8cd5bfb96b3 533
+.github/workflows/security.yml
+  s_92da2e17572f1a::t_3490701adb3609 40,44
+  s_92da2e17572f1a::t_55c5e833b4b8fb 22,25,39
+  s_92da2e17572f1a::t_8e86b820070957 1-7,9-21,23-24,26-38,41-43,45-46
+  h_cca6aa2712613d 8
+.github/workflows/update-dependencies.yml
+  h_cca6aa2712613d 5
+  s_92da2e17572f1a::t_8e86b820070957 1-4,6-15,18-21,23-30
+  s_92da2e17572f1a::t_02675d0a01eeb6 22
+  s_92da2e17572f1a::t_55c5e833b4b8fb 16-17
+scripts/pre_commit_hooks/prevent_protected_branch.py
+  s_92da2e17572f1a::t_02675d0a01eeb6 14-16,38-40,57-59
+scripts/pre_commit_hooks/sorter.py
+  s_92da2e17572f1a::t_c2cd148f3d2113 102
+.config/zsh/config/completion.zsh
+  s_3ed1bb035a9bda::t_5798744adf220f 5-9
+scripts/pre_commit_hooks/check_secrets.py
+  s_92da2e17572f1a::t_c2cd148f3d2113 76
+  s_92da2e17572f1a::t_c8e6d8a4bb5c4a 78
+  s_92da2e17572f1a::t_02675d0a01eeb6 52-54,84-86,133-135
+Dockerfile
+  h_cca6aa2712613d 1-3
+.python-version
+  s_92da2e17572f1a::t_8f416a29af0ce9 1
+.config/cspell/cspell.txt
+  s_92da2e17572f1a::t_42605066f5403a 435
+uv.lock
+  h_cca6aa2712613d 1-1729
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0c62d379474ac3e7d06514e78109356bf6162826",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_3ed1bb035a9bda": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "a27f4c52-838f-4679-8afd-a12f7fe59419",
+        "model": "grok-4.7"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    },
+    "s_92da2e17572f1a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d00a8250-1b85-4f17-89f3-694de9ce5f82",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
