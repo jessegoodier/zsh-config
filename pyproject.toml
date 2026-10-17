@@ -5,7 +5,7 @@ description = "python tools for my profile"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "boto3>=1.43.113",
+    "boto3>=1.43.114",
     "botocore[crt]",
     "fastmcp",
     "pygithub",

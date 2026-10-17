@@ -12,9 +12,10 @@
 USAGE
     update_dependencies.py [--dry-run] [--only ECOSYSTEM] [--allow-major]
 
-    Run from anywhere inside a repo checkout; the repo root is the parent of the
-    directory holding this script. Ecosystems with nothing to update are skipped.
-    Needs `uv`; also `gh` (actions) and `docker` (images) when those are used.
+    Run it from the root of the repo you want to update. The current working
+    directory is that root; where this script lives does not matter. Ecosystems
+    with nothing to update are skipped. Needs `uv`; also `gh` (actions) and
+    `docker` (images) when those are used.
 
 ECOSYSTEMS
     python   pyproject.toml + uv.lock: relax exact pins, `uv lock --upgrade`,
@@ -32,15 +33,15 @@ OPTIONS
                    action is reported as "held" and the current version is only
                    pinned in place; Python upper bounds (<N) are kept.
 
-NO_PIN
-    Everything is pinned unless the line opts out. Put NO_PIN in a comment on the
+NO_AUTO_UPDATE
+    Everything is pinned unless the line opts out. Put NO_AUTO_UPDATE in a comment on the
     same line, or in a comment on the line directly above. Any comment style
     works (#, //, ;, --, /* */, <!-- -->):
 
-        - uses: actions/checkout@v7  # NO_PIN
-        # NO_PIN keep floating so auto-updates do not break our scripts
+        - uses: actions/checkout@v7  # NO_AUTO_UPDATE
+        # NO_AUTO_UPDATE keep floating so auto-updates do not break our scripts
         - uses: actions/checkout@v7
-        FROM python:3.13-slim  # NO_PIN
+        FROM python:3.13-slim  # NO_AUTO_UPDATE
 
     Opted-out lines are left untouched and listed in the output.
 
@@ -73,7 +74,9 @@ from rich.table import Table
 from rich.text import Text
 
 console = Console()
-ROOT = Path(__file__).resolve().parents[1]
+# The alias lives in this repo and is run from other checkouts. Update the
+# directory the command was started in, which is the root of that repo.
+ROOT = Path.cwd().resolve()
 PYPROJECT = ROOT / "pyproject.toml"
 UV_LOCK = ROOT / "uv.lock"
 PRE_COMMIT = ROOT / ".pre-commit-config.yaml"
@@ -397,8 +400,8 @@ VERSION_IN_COMMENT_RE = re.compile(
 
 SKIP_DIRS = {".git", ".venv", "venv", "node_modules", ".tox", "__pycache__"}
 COMMENT_STARTS = ("#", "//", ";", "--", "/*", "*", "<!--", "%", "'", "REM ")
-# (file, name, ref) for every line left alone because of NO_PIN.
-NO_PIN_SKIPS: list[tuple[str, str, str]] = []
+# (file, name, ref) for every line left alone because of NO_AUTO_UPDATE.
+NO_AUTO_UPDATE_SKIPS: list[tuple[str, str, str]] = []
 
 
 def find_files(match) -> list[Path]:
@@ -439,16 +442,16 @@ def find_action_files() -> list[Path]:
     ]
 
 
-def has_no_pin(text: str, pos: int) -> bool:
-    """NO_PIN on the line holding `pos`, or in a comment on the line above."""
+def has_NO_AUTO_UPDATE(text: str, pos: int) -> bool:
+    """NO_AUTO_UPDATE on the line holding `pos`, or in a comment on the line above."""
     start = text.rfind("\n", 0, pos) + 1
     end = text.find("\n", pos)
-    if "NO_PIN" in text[start : end if end != -1 else len(text)]:
+    if "NO_AUTO_UPDATE" in text[start : end if end != -1 else len(text)]:
         return True
     if start == 0:
         return False
     above = text[: start - 1].rsplit("\n", 1)[-1].strip()
-    return "NO_PIN" in above and above.startswith(COMMENT_STARTS)
+    return "NO_AUTO_UPDATE" in above and above.startswith(COMMENT_STARTS)
 
 
 def action_comment(existing: str, tag: str) -> str:
@@ -502,8 +505,8 @@ def update_actions(
             repo = "/".join(action.split("/")[:2])
             if repo.lower() in {"kubecost/kc-pr-agent", "codium-ai/pr-agent"}:
                 return match[0]
-            if has_no_pin(text, match.start("action")):
-                NO_PIN_SKIPS.append((rel, action, ref))
+            if has_NO_AUTO_UPDATE(text, match.start("action")):
+                NO_AUTO_UPDATE_SKIPS.append((rel, action, ref))
                 return match[0]
             pinned = re.fullmatch(r"[0-9a-f]{40}", ref) is not None
             if pinned:
@@ -626,8 +629,8 @@ def update_docker(*, dry_run: bool = False) -> list[tuple[str, str, str, str, st
             stages.update(s.lower() for s in STAGE_RE.findall(match["rest"]))
             if is_stage or ref.lower() == "scratch" or "$" in ref:
                 return match[0]
-            if has_no_pin(text, match.start()):
-                NO_PIN_SKIPS.append((rel, ref, match["digest"] or "unpinned"))
+            if has_NO_AUTO_UPDATE(text, match.start()):
+                NO_AUTO_UPDATE_SKIPS.append((rel, ref, match["digest"] or "unpinned"))
                 return match[0]
             image = ref if ":" in ref.rsplit("/", 1)[-1] else f"{ref}:latest"
             if image not in digests:
@@ -731,10 +734,10 @@ def print_docker(rows: list[tuple[str, str, str, str, str]]) -> None:
     emit_section("docker", rows)
 
 
-def print_no_pin() -> None:
-    for path, name, ref in NO_PIN_SKIPS:
+def print_NO_AUTO_UPDATE() -> None:
+    for path, name, ref in NO_AUTO_UPDATE_SKIPS:
         console.print(
-            f"[bold yellow]NO_PIN[/]  {name}@{short_rev(ref)} left as-is [dim]({path})[/]"
+            f"[bold yellow]NO_AUTO_UPDATE[/]  {name}@{short_rev(ref)} left as-is [dim]({path})[/]"
         )
 
 
@@ -826,7 +829,7 @@ def main() -> None:
         with console.status("[cyan]hooks[/]", spinner="dots"):
             hook_changes = update_hooks(dry_run=args.dry_run)
         print_hooks(hook_changes)
-    print_no_pin()
+    print_NO_AUTO_UPDATE()
 
 
 if __name__ == "__main__":
