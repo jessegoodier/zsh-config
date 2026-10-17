@@ -1,0 +1,32 @@
+scripts/update_dependencies.py
+  s_31f7cd32f7d7ae::t_02929dd7350521 77-79
+  h_cca6aa2712613d 36-37,41-42,44,403-404,445-446,449,454,508-509,632-633,737-738,740,832
+  s_31f7cd32f7d7ae::t_e980dc0806386c 15-18
+Dockerfile
+  h_cca6aa2712613d 3
+pyproject.toml
+  h_cca6aa2712613d 8
+uv.lock
+  h_cca6aa2712613d 103,110,112,117,124,126,136,138,140,441,443,445,556,558,560,838,840,842,898,900,902,907,909,911,1156,1158,1160-1170,1203,1208,1210,1401-1421,1546,1555,1557,1713
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "35d9bc237494d0e53cea3abf3aa12c85531c0373",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_31f7cd32f7d7ae": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "236e1914-d394-4c49-b2be-e679a28a351b",
+        "model": "grok-4.7"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
