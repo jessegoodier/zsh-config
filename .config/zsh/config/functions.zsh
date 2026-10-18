@@ -2,7 +2,7 @@
 # (zsh aliases shadow functions; deferred OMZ plugins load after the first source.)
 () {
 	local n
-	for n in z y extract port myip pingmap weather uvi nai kai kla klap klaf \
+	for n in z y extract tar-cwd port myip pingmap weather uvi nai kai kla klap klaf \
 		cat ll l la ls scan_image password_gen mdcd mdtmpcd kpf ksd kgpv ki
 	do
 		unalias "$n" 2>/dev/null
@@ -106,6 +106,74 @@ extract() {
 
 	(( rc == 0 )) && echo "${C_GREEN}✅ Extraction complete!${C_NC}"
 	return $rc
+}
+
+# Tar the current directory into the parent folder as a .tgz.
+# Keeps the directory name as the archive root; includes .git and other
+# hidden paths except clearly non-portable dependency/cache dirs.
+tar-cwd() {
+	if [[ "$1" == "help" || "$1" == "-h" ]]; then
+		echo "${C_CYAN}📦 tar-cwd${C_NC}: Archive the current directory into the parent folder."
+		echo "Usage: ${C_YELLOW}tar-cwd${C_NC}"
+		echo "Skips: .venv, node_modules, and similar dependency/cache dirs."
+		echo "Includes: .git and other hidden folders."
+		return 0
+	fi
+
+	local dir_name parent archive
+	dir_name=${PWD:t}
+	parent=${PWD:h}
+
+	if [[ -z "$dir_name" || "$dir_name" == "/" || "$parent" == "$PWD" ]]; then
+		echo "${C_RED}❌ Cannot archive from filesystem root.${C_NC}"
+		return 1
+	fi
+
+	archive="$parent/${dir_name}.tgz"
+
+	local -a excludes=(
+		--exclude='.venv'
+		--exclude='venv'
+		--exclude='node_modules'
+		--exclude='__pycache__'
+		--exclude='.pytest_cache'
+		--exclude='.mypy_cache'
+		--exclude='.ruff_cache'
+		--exclude='.tox'
+		--exclude='.eggs'
+		--exclude='*.egg-info'
+		--exclude='__pypackages__'
+		--exclude='.direnv'
+		--exclude='.cache'
+		--exclude='.npm'
+		--exclude='.yarn'
+		--exclude='.pnpm-store'
+		--exclude='.turbo'
+		--exclude='.next'
+		--exclude='.nuxt'
+		--exclude='.parcel-cache'
+		--exclude='dist'
+		--exclude='build'
+		--exclude='target'
+		--exclude='vendor'
+		--exclude='Pods'
+		--exclude='.bundle'
+		--exclude='.gradle'
+	)
+
+	echo "${C_CYAN}Archiving ${C_YELLOW}${dir_name}${C_CYAN} → ${C_YELLOW}${archive}${C_NC}"
+	if tar -czvf "$archive" \
+		"${excludes[@]}" \
+		-C "$parent" "$dir_name"
+	then
+		local size
+		size=$(du -h "$archive" | cut -f1)
+		echo "${C_GREEN}✅ Created ${archive} (${size})${C_NC}"
+	else
+		rm -f -- "$archive"
+		echo "${C_RED}❌ Failed to create archive.${C_NC}"
+		return 1
+	fi
 }
 
 # Inspect a port and optionally terminate the process using it
