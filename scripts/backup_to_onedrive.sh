@@ -66,9 +66,6 @@ if [ -f "$history_file" ]; then
     trap 'rm -rf "$history_tmp"' EXIT
     cp "$history_file" "$history_tmp/zsh-history"
     history_args=(-C "$history_tmp" zsh-history)
-    log "including zsh history from $history_file"
-else
-    log "zsh history not found at $history_file; skipping"
 fi
 
 if tar --exclude=".venv" --exclude=".git" --exclude="target" -czf "$archive" -C "$(dirname "$SRC_DIR")" "$(basename "$SRC_DIR")" ${history_args[@]+"${history_args[@]}"}; then
