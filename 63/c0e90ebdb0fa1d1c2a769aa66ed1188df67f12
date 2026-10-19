@@ -1,0 +1,19 @@
+scripts/update_dependencies.py
+  s_dae05ae9a998b5::t_609a27b716b895 405-407,437-440,444-451,483-485,494-495,503,505-506,540-541,561-562,579-580,582-583,585-596,600,629,651
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "63c0e90ebdb0fa1d1c2a769aa66ed1188df67f12",
+  "prompts": {},
+  "sessions": {
+    "s_dae05ae9a998b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "a430bc04-fba1-4cdf-9520-c03ab53baa1d",
+        "model": "default"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
