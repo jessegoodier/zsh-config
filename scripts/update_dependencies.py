@@ -402,6 +402,9 @@ SKIP_DIRS = {".git", ".venv", "venv", "node_modules", ".tox", "__pycache__"}
 COMMENT_STARTS = ("#", "//", ";", "--", "/*", "*", "<!--", "%", "'", "REM ")
 # (file, name, ref) for every line left alone because of NO_AUTO_UPDATE.
 NO_AUTO_UPDATE_SKIPS: list[tuple[str, str, str]] = []
+# Per-run caches so skip_reason and the updaters share one file walk each.
+_ACTION_FILES: list[Path] | None = None
+_DOCKERFILES: list[Path] | None = None
 
 
 def find_files(match) -> list[Path]:
@@ -431,15 +434,21 @@ def is_dockerfile(name: str) -> bool:
 
 
 def find_dockerfiles() -> list[Path]:
-    return find_files(is_dockerfile)
+    global _DOCKERFILES
+    if _DOCKERFILES is None:
+        _DOCKERFILES = find_files(is_dockerfile)
+    return _DOCKERFILES
 
 
 def find_action_files() -> list[Path]:
-    return [
-        p
-        for p in find_files(lambda n: n.endswith((".yml", ".yaml")))
-        if p.relative_to(ROOT).parts[:1] == (".github",)
-    ]
+    global _ACTION_FILES
+    if _ACTION_FILES is None:
+        _ACTION_FILES = [
+            p
+            for p in find_files(lambda n: n.endswith((".yml", ".yaml")))
+            if p.relative_to(ROOT).parts[:1] == (".github",)
+        ]
+    return _ACTION_FILES
 
 
 def has_NO_AUTO_UPDATE(text: str, pos: int) -> bool:
@@ -471,7 +480,9 @@ def update_actions(
 ) -> list[tuple[str, str, str, str, str]]:
     """Return table rows (kind, action, old, new, note) for each pin that moved."""
     rows: list[tuple[str, str, str, str, str]] = []
-    latest: dict[str, tuple[str, str] | None] = {}
+    # Tag only until a write needs the SHA — held majors / already-current pins
+    # should not pay for a commits API call.
+    latest_tags: dict[str, str | None] = {}
     commits: dict[tuple[str, str], str] = {}
 
     def commit_sha(repo: str, ref: str) -> str:
@@ -480,8 +491,8 @@ def update_actions(
             commits[(repo, ref)] = data["sha"]
         return commits[(repo, ref)]
 
-    def latest_release(repo: str) -> tuple[str, str] | None:
-        if repo not in latest:
+    def latest_tag(repo: str) -> str | None:
+        if repo not in latest_tags:
             result = run(
                 ["gh", "api", f"repos/{repo}/releases/latest"], allow_not_found=True
             )
@@ -489,11 +500,10 @@ def update_actions(
                 console.print(
                     f"[yellow]actions: no latest release for {repo}, skipped[/]"
                 )
-                latest[repo] = None
+                latest_tags[repo] = None
             else:
-                tag = json.loads(result.stdout)["tag_name"]
-                latest[repo] = (tag, commit_sha(repo, tag))
-        return latest[repo]
+                latest_tags[repo] = json.loads(result.stdout)["tag_name"]
+        return latest_tags[repo]
 
     for path in find_action_files():
         rel = str(path.relative_to(ROOT))
@@ -527,10 +537,9 @@ def update_actions(
             held = False
             tag = sha = ""
             if not in_place:
-                release = latest_release(repo)
-                if release is None:
+                tag = latest_tag(repo) or ""
+                if not tag:
                     return match[0]
-                tag, sha = release
                 try:
                     newest = Version(tag)
                 except InvalidVersion:
@@ -549,6 +558,8 @@ def update_actions(
                 if pinned:
                     return match[0]
                 tag, sha = ref, commit_sha(repo, ref)
+            else:
+                sha = commit_sha(repo, tag)
             updated = f"{match['prefix']}{action}@{sha}{action_comment(match['comment'], tag)}"
             if updated == match[0]:
                 return match[0]
@@ -565,26 +576,28 @@ def update_actions(
     return rows
 
 
-def image_digest(image: str) -> str:
+def image_digest(image: str, *, ecr_tokens: dict[str, str]) -> str:
+    """Resolve a registry digest. ECR auth tokens are cached per repository for the run."""
     if image.startswith("public.ecr.aws/"):
-        # Public ECR supports anonymous pulls. Fetch a fresh token instead of consulting
-        # Docker's potentially expired operator credentials or a cached token response.
+        # Public ECR supports anonymous pulls. Prefer a token fetched this run over
+        # Docker's potentially expired operator credentials.
         repository, tag = image.removeprefix("public.ecr.aws/").rsplit(":", 1)
-        query = urllib.parse.urlencode(
-            {
-                "service": "public.ecr.aws",
-                "scope": f"repository:{repository}:pull",
-                "t": time.time_ns(),
-            }
-        )
-        with urllib.request.urlopen(
-            f"https://public.ecr.aws/token/?{query}", timeout=30
-        ) as response:
-            token = json.load(response)["token"]
+        if repository not in ecr_tokens:
+            query = urllib.parse.urlencode(
+                {
+                    "service": "public.ecr.aws",
+                    "scope": f"repository:{repository}:pull",
+                    "t": time.time_ns(),
+                }
+            )
+            with urllib.request.urlopen(
+                f"https://public.ecr.aws/token/?{query}", timeout=30
+            ) as response:
+                ecr_tokens[repository] = json.load(response)["token"]
         request = urllib.request.Request(
             f"https://public.ecr.aws/v2/{repository}/manifests/{tag}",
             headers={
-                "Authorization": f"Bearer {token}",
+                "Authorization": f"Bearer {ecr_tokens[repository]}",
                 "Accept": "application/vnd.oci.image.index.v1+json, "
                 "application/vnd.docker.distribution.manifest.list.v2+json, "
                 "application/vnd.oci.image.manifest.v1+json, "
@@ -613,6 +626,7 @@ def update_docker(*, dry_run: bool = False) -> list[tuple[str, str, str, str, st
     """Pin or refresh image digests. Return rows (kind, image, old, new, dockerfile)."""
     rows: list[tuple[str, str, str, str, str]] = []
     digests: dict[str, str] = {}
+    ecr_tokens: dict[str, str] = {}
     for path in find_dockerfiles():
         rel = str(path.relative_to(ROOT))
         original = path.read_text()
@@ -634,7 +648,7 @@ def update_docker(*, dry_run: bool = False) -> list[tuple[str, str, str, str, st
                 return match[0]
             image = ref if ":" in ref.rsplit("/", 1)[-1] else f"{ref}:latest"
             if image not in digests:
-                digest = image_digest(image)
+                digest = image_digest(image, ecr_tokens=ecr_tokens)
                 if not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
                     raise ValueError(f"Invalid registry digest for {image}: {digest}")
                 digests[image] = digest
