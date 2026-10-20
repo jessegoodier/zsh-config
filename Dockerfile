@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-
-FROM ghcr.io/jessegoodier/toolbox-homebrew:latest # NO_AUTO_UPDATE
+# NO_AUTO_UPDATE
+FROM ghcr.io/jessegoodier/toolbox-homebrew:latest
 
 COPY --chown=toolbox:toolbox . /home/toolbox/zsh-config-repo
 

@@ -10,7 +10,7 @@
 """Update Python dependencies, GitHub Actions, Docker digests, and pre-commit hooks.
 
 USAGE
-    update_dependencies.py [--dry-run] [--only ECOSYSTEM] [--allow-major]
+    update_dependencies.py [--dry-run] [--only ECOSYSTEM] [--no-major-version-updates]
 
     Run it from the root of the repo you want to update. The current working
     directory is that root; where this script lives does not matter. Ecosystems
@@ -29,9 +29,11 @@ ECOSYSTEMS
 OPTIONS
     --dry-run      Show what would change and leave every file as it was.
     --only X       Run a single ecosystem (python, actions, docker, hooks).
-    --allow-major  Allow major upgrades. Without it, a new major release of an
-                   action is reported as "held" and the current version is only
-                   pinned in place; Python upper bounds (<N) are kept.
+    --no-major-version-updates
+                   Hold major upgrades. A new major release of an action is
+                   reported as "held" and the current version is only pinned in
+                   place; Python upper bounds (<N) are kept. Major upgrades are
+                   applied by default (--allow-major is accepted and is a no-op).
 
 NO_AUTO_UPDATE
     Everything is pinned unless the line opts out. Put NO_AUTO_UPDATE in a comment on the
@@ -162,7 +164,7 @@ def parse_pyproject_direct() -> set[str]:
     }
 
 
-def relax_spec(spec: str, req: Requirement, *, allow_major: bool = False) -> str:
+def relax_spec(spec: str, req: Requirement, *, allow_major: bool = True) -> str:
     updated = spec
     for constraint in req.specifier:
         if constraint.operator == "==" and "*" not in constraint.version:
@@ -182,7 +184,7 @@ def relax_spec(spec: str, req: Requirement, *, allow_major: bool = False) -> str
     return updated
 
 
-def relax_constraints(text: str, *, allow_major: bool = False) -> str:
+def relax_constraints(text: str, *, allow_major: bool = True) -> str:
     """Let uv resolve exact pins; retain marker-specific major lines and bounds."""
     for start, end, spec, req in reversed(list(dependency_specs(text))):
         text = (
@@ -195,7 +197,7 @@ def update_pyproject_constraints(
     locked_versions: dict[str, list[str]],
     *,
     original: str,
-    allow_major: bool = False,
+    allow_major: bool = True,
 ) -> list[tuple[str, str, str]]:
     changes = []
     text = original
@@ -327,10 +329,12 @@ def emit_section(
     counts: dict[str, int] = {}
     for kind, *_rest in rows:
         counts[kind] = counts.get(kind, 0) + 1
-    bits = [
-        f"[{KIND_STYLE.get(kind, 'white')}]{count} {kind}[/]"
-        for kind, count in counts.items()
-    ]
+    bits = []
+    for kind, count in counts.items():
+        if kind == "major":
+            bits.append(f"[bold white on red] {count} {kind} [/]")
+        else:
+            bits.append(f"[{KIND_STYLE.get(kind, 'white')}]{count} {kind}[/]")
     if extra:
         bits.append(f"[dim]{extra}[/]")
     console.print(f"[bold cyan]{title:<7}[/] " + "  ".join(bits))
@@ -351,6 +355,16 @@ def emit_section(
     table.add_column(style="green", no_wrap=True)
     table.add_column(style="dim italic", no_wrap=True)
     for kind, name, old, new, note in rows:
+        if kind == "major":
+            table.add_row(
+                Text(f" {kind} ", style="bold white on red"),
+                Text(name, style="bold red"),
+                Text(short_rev(old), style="red"),
+                Text("→", style="bold red"),
+                Text(short_rev(new), style="bold red"),
+                Text(note, style="red"),
+            )
+            continue
         table.add_row(
             Text(kind, style=KIND_STYLE.get(kind, "white")),
             name,
@@ -363,7 +377,7 @@ def emit_section(
 
 
 def update_python(
-    *, allow_major: bool = False, dry_run: bool = False
+    *, allow_major: bool = True, dry_run: bool = False
 ) -> tuple[dict[str, str], list[tuple[str, str, str]]]:
     original = PYPROJECT.read_text(encoding="utf-8")
     original_lock = UV_LOCK.read_bytes() if UV_LOCK.is_file() else None
@@ -508,7 +522,7 @@ def fetch_json(url: str) -> dict | None:
     try:
         with urllib.request.urlopen(url, timeout=30) as response:
             payload = json.load(response)
-    except (OSError, json.JSONDecodeError):
+    except OSError, json.JSONDecodeError:
         return None
     return payload if isinstance(payload, dict) else None
 
@@ -628,7 +642,7 @@ def action_comment(existing: str, tag: str) -> str:
 
 
 def update_actions(
-    *, dry_run: bool = False, allow_major: bool = False
+    *, dry_run: bool = False, allow_major: bool = True
 ) -> list[tuple[str, str, str, str, str]]:
     """Return table rows (kind, action, old, new, note) for each pin that moved."""
     rows: list[tuple[str, str, str, str, str]] = []
@@ -769,7 +783,13 @@ def update_actions(
                     tag = ""
                 elif newest.major > current.major and not allow_major:
                     rows.append(
-                        ("major", action, old, tag, f"{rel} held, use --allow-major")
+                        (
+                            "major",
+                            action,
+                            old,
+                            tag,
+                            f"{rel} held by --no-major-version-updates",
+                        )
                     )
                     in_place = held = True
                     tag = ""
@@ -997,7 +1017,10 @@ def print_NO_AUTO_UPDATE() -> None:
 
 
 def print_hooks(changes: list[tuple[str, str, str]]) -> None:
-    emit_section("hooks", [("pin", repo, old, new, "") for repo, old, new in changes])
+    rows = []
+    for repo, old, new in changes:
+        rows.append((bump_type(old, new) or "pin", repo, old, new, ""))
+    emit_section("hooks", rows)
 
 
 def skip_reason(ecosystem: str) -> str | None:
@@ -1034,7 +1057,16 @@ def main() -> None:
     parser.add_argument(
         "--allow-major",
         action="store_true",
-        help="Allow major upgrades (Python upper bounds, new action majors).",
+        default=True,
+        help="Allow major upgrades. This is the default.",
+    )
+    parser.add_argument(
+        "--no-major-version-updates",
+        action="store_false",
+        dest="allow_major",
+        help=(
+            "Hold major upgrades: pin actions in place and keep Python upper bounds."
+        ),
     )
     args = parser.parse_args()
     selected = [args.only] if args.only else ["python", "actions", "docker", "hooks"]
