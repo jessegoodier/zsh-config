@@ -21,7 +21,9 @@ ECOSYSTEMS
     python   pyproject.toml + uv.lock: relax exact pins, `uv lock --upgrade`,
              then raise the minimum versions in pyproject.toml.
     actions  every `uses: owner/repo@ref` in .github/**/*.yml (workflows and
-             composite actions) is pinned to a commit SHA with a `# vX.Y.Z` comment.
+             composite actions) is pinned to a commit SHA with a `# vX.Y.Z`
+             comment (full semver when a same-commit X.Y.Z tag exists; floating
+             majors like v3 from /releases/latest are expanded).
     docker   every FROM line in Dockerfile*, *.Dockerfile, Containerfile (found
              anywhere in the repo) is pinned to an image digest.
     hooks    `pre-commit autoupdate --freeze`.
@@ -629,6 +631,14 @@ def image_freshness(image: str) -> tuple[str, str, str] | None:
     return None
 
 
+def is_full_semver(tag: str) -> bool:
+    """True when tag is X.Y.Z (or vX.Y.Z), not a floating major like v3."""
+    try:
+        return len(Version(tag).release) >= 3
+    except InvalidVersion:
+        return False
+
+
 def action_comment(existing: str, tag: str) -> str:
     """Comment after a pinned SHA naming the release that commit belongs to."""
     if VERSION_IN_COMMENT_RE.search(existing):
@@ -667,6 +677,38 @@ def update_actions(
                 commits[(repo, ref)] = json.loads(result.stdout)["sha"]
         return commits[(repo, ref)]
 
+    def prefer_full_semver(repo: str, tag: str) -> str:
+        """Replace floating majors (v3) with a same-commit full tag (v3.0.0) when one exists.
+
+        Action repos often publish both a moving major release and a full semver tag
+        on the same commit. /releases/latest can return the major (newer published_at),
+        but pins should label the concrete X.Y.Z when available.
+        """
+        if is_full_semver(tag):
+            return tag
+        sha = commit_sha(repo, tag, missing_ok=True)
+        if not sha:
+            return tag
+        result = run(
+            ["gh", "api", f"repos/{repo}/git/matching-refs/tags/{tag}"],
+            allow_not_found=True,
+        )
+        if result.returncode != 0:
+            return tag
+        best: str | None = None
+        best_version: Version | None = None
+        prefix = f"{tag}."
+        for ref in json.loads(result.stdout):
+            name = ref["ref"].removeprefix("refs/tags/")
+            if not name.startswith(prefix) or not is_full_semver(name):
+                continue
+            if commit_sha(repo, name, missing_ok=True) != sha:
+                continue
+            version = Version(name)
+            if best_version is None or version > best_version:
+                best, best_version = name, version
+        return best or tag
+
     def latest_tag(repo: str) -> str | None:
         if repo not in latest_tags:
             result = run(
@@ -678,7 +720,8 @@ def update_actions(
                 )
                 latest_tags[repo] = None
             else:
-                latest_tags[repo] = json.loads(result.stdout)["tag_name"]
+                tag = json.loads(result.stdout)["tag_name"]
+                latest_tags[repo] = prefer_full_semver(repo, tag) if tag else None
         return latest_tags[repo]
 
     def note_maintenance(name: str, repo: str, rel: str, suffix: str = "") -> None:
