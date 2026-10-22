@@ -1,0 +1,44 @@
+scripts/update_dependencies.py
+  s_e443b62c7a9df8::t_ff1e285e1c245d 336,341-342
+  s_e443b62c7a9df8::t_b5eda82ff0bad7 40-43
+  s_e443b62c7a9df8::t_7e8bc2be7b4898 24-26
+  s_e443b62c7a9df8::t_d05b6dc675eecc 482-483
+  s_e443b62c7a9df8::t_7ea4fd63012f0d 1285-1294,1312-1313
+  s_e443b62c7a9df8::t_ed9c6e813e69f3 32-34
+  s_e443b62c7a9df8::t_0c11444ba12c03 545,553-559,563-567
+  s_e443b62c7a9df8::t_90e28f59e189e2 1339-1341
+  s_e443b62c7a9df8::t_ed90f39501a3a1 1057-1072,1103-1104
+  s_e443b62c7a9df8::t_4fabcd12a35b38 47-50
+  s_e443b62c7a9df8::t_6121dd72d7b21a 215-222,228,243-261,263-264
+  s_e443b62c7a9df8::t_01bf97429a7b0d 715-718,727,776-789,791-802,805-808,811,813-816,822-823,825,828,833-834,837-870
+  s_e443b62c7a9df8::t_412447bb9fb05d 44-46
+  s_e443b62c7a9df8::t_280b9778e811bd 1354-1356
+  s_e443b62c7a9df8::t_0736f6e6f10785 420-423,446-449
+  s_e443b62c7a9df8::t_501c833a7065a0 803-804,809-810,812,817-821,824,835-836
+  s_e443b62c7a9df8::t_669e24563f3dd5 1225-1232
+  s_e443b62c7a9df8::t_4d0c10026837f4 15
+  s_e443b62c7a9df8::t_27b63943d44b8c 1295-1302
+  s_e443b62c7a9df8::t_ced438f0866b56 391
+  s_e443b62c7a9df8::t_a4da6700f574eb 14
+  s_e443b62c7a9df8::t_bba9f991789a41 1303-1310
+  s_e443b62c7a9df8::t_233c2f8125cce5 1361-1364,1371
+  s_e443b62c7a9df8::t_8bb82b3617e26c 343
+  s_e443b62c7a9df8::t_23c164f4dd9ed1 568-569
+  s_e443b62c7a9df8::t_17ec421b30ecee 1105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6a8e79e43305c0acb1858acc972f5b50a3ed0341",
+  "prompts": {},
+  "sessions": {
+    "s_e443b62c7a9df8": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "51ed9040-63a4-4bf2-8c0b-51de33d450fd",
+        "model": "default"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
