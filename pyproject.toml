@@ -5,22 +5,22 @@ description = "python tools for my profile"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "boto3>=1.43.115",
-    "botocore[crt]",
-    "fastmcp",
-    "pygithub",
-    "pyyaml",
-    "requests",
-    "rich",
-    "urllib3",
+    "boto3>=1.43.118",
+    "botocore[crt]>=1.43.118",
+    "fastmcp>=4.1.3",
+    "pygithub>=2.10.0",
+    "pyyaml>=6.0.3",
+    "requests>=2.34.2",
+    "rich>=15.0.0",
+    "urllib3>=2.8.0",
 ]
 
 [dependency-groups]
 dev = [
     "pre-commit>=4.7.0",
-    "pyrefly",
-    "pytest",
-    "ruff",
+    "pyrefly>=1.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.17.2",
 ]
 
 [tool.uv]
