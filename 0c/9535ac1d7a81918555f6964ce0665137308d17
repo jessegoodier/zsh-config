@@ -1,0 +1,25 @@
+.config/zsh/plugins/oh-my-zsh-plugins/git.plugin.zsh
+  s_0bf550773c584e::t_7f016d2d82f527 31-34,38-40
+  s_0bf550773c584e::t_108aa8ad6063e8 37,44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0c9535ac1d7a81918555f6964ce0665137308d17",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_0bf550773c584e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "a938fa60-94c1-4a0f-962c-e07760de3c0d",
+        "model": "default"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
