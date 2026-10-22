@@ -11,6 +11,8 @@
 
 USAGE
     update_dependencies.py [--dry-run] [--only ECOSYSTEM] [--no-major-version-updates]
+                           [--min-age HOURS] [--enable-docker-latest-to-sha-updates]
+                           [--add-python-latest-version]
 
     Run it from the root of the repo you want to update. The current working
     directory is that root; where this script lives does not matter. Ecosystems
@@ -19,18 +21,33 @@ USAGE
 
 ECOSYSTEMS
     python   pyproject.toml + uv.lock: relax exact pins, `uv lock --upgrade`,
-             then raise the minimum versions in pyproject.toml.
+             then raise the minimum versions in pyproject.toml. Unversioned
+             requirements stay bare unless --add-python-latest-version writes
+             a >= floor from the lock.
     actions  every `uses: owner/repo@ref` in .github/**/*.yml (workflows and
              composite actions) is pinned to a commit SHA with a `# vX.Y.Z`
              comment (full semver when a same-commit X.Y.Z tag exists; floating
              majors like v3 from /releases/latest are expanded).
     docker   every FROM line in Dockerfile*, *.Dockerfile, Containerfile (found
-             anywhere in the repo) is pinned to an image digest.
+             anywhere in the repo) is pinned to an image digest. Images tagged
+             latest (or untagged, which implies latest) are skipped unless
+             --enable-docker-latest-to-sha-updates is set.
     hooks    `pre-commit autoupdate --freeze`.
 
 OPTIONS
     --dry-run      Show what would change and leave every file as it was.
     --only X       Run a single ecosystem (python, actions, docker, hooks).
+    --min-age N    Actions only: ignore releases younger than N hours (default
+                   48). Still moves to the newest release that clears the
+                   cooldown; prints a cooldown row when that is not the absolute
+                   latest. --min-age 0 takes the absolute latest.
+    --enable-docker-latest-to-sha-updates
+                   Pin or refresh digests for images tagged latest (including
+                   untagged FROM lines, which imply :latest). Skipped by default.
+    --add-python-latest-version
+                   Write >= floors for unversioned Python requirements (e.g.
+                   fastmcp -> fastmcp>=x.y.z) from the upgraded lock. Off by
+                   default.
     --no-major-version-updates
                    Hold major upgrades. A new major release of an action is
                    reported as "held" and the current version is only pinned in
@@ -195,11 +212,20 @@ def relax_constraints(text: str, *, allow_major: bool = True) -> str:
     return text
 
 
+def add_minimum_version(spec: str, version: str) -> str:
+    """Insert >=version after name/extras, before any environment marker."""
+    if ";" in spec:
+        left, right = spec.split(";", 1)
+        return f"{left.rstrip()}>={version};{right}"
+    return f"{spec}>={version}"
+
+
 def update_pyproject_constraints(
     locked_versions: dict[str, list[str]],
     *,
     original: str,
     allow_major: bool = True,
+    add_latest: bool = False,
 ) -> list[tuple[str, str, str]]:
     changes = []
     text = original
@@ -214,22 +240,30 @@ def update_pyproject_constraints(
             continue
         version = max(candidates, key=Version)
         updated = spec
-        for constraint in req.specifier:
-            if constraint.operator in ("==", ">=") and "*" not in constraint.version:
-                if Version(version) > Version(constraint.version):
+        if add_latest and not req.specifier and not req.url:
+            updated = add_minimum_version(spec, version)
+        else:
+            for constraint in req.specifier:
+                if (
+                    constraint.operator in ("==", ">=")
+                    and "*" not in constraint.version
+                ):
+                    if Version(version) > Version(constraint.version):
+                        updated = updated.replace(
+                            f"{constraint.operator}{constraint.version}",
+                            f"{constraint.operator}{version}",
+                            1,
+                        )
+                elif (
+                    allow_major
+                    and constraint.operator == "<"
+                    and Version(version) not in req.specifier
+                ):
                     updated = updated.replace(
-                        f"{constraint.operator}{constraint.version}",
-                        f"{constraint.operator}{version}",
+                        f"<{constraint.version}",
+                        f"<{Version(version).major + 1}",
                         1,
                     )
-            elif (
-                allow_major
-                and constraint.operator == "<"
-                and Version(version) not in req.specifier
-            ):
-                updated = updated.replace(
-                    f"<{constraint.version}", f"<{Version(version).major + 1}", 1
-                )
         if updated != spec:
             text = text[:start] + updated + text[end:]
             changes.append((pep508_name(req.name), spec, updated))
@@ -299,9 +333,13 @@ KIND_STYLE = {
     "spec": "magenta",
     "pin": "yellow",
     "digest": "blue",
+    "cooldown": "blue",
     "stale": "bold red",
     "archived": "bold red",
 }
+
+# Hours a GitHub Actions release must have been published before we adopt it.
+DEFAULT_MIN_AGE_HOURS = 48
 
 # Days since the last publish/push before a dependency is reported as stale.
 STALE_DAYS = 180
@@ -350,7 +388,7 @@ def emit_section(
         collapse_padding=True,
         expand=False,
     )
-    table.add_column(min_width=6, no_wrap=True)
+    table.add_column(min_width=9, no_wrap=True)
     table.add_column(style="cyan", no_wrap=True)
     table.add_column(style="dim", justify="right", no_wrap=True)
     table.add_column(style="dim", width=1, no_wrap=True)
@@ -379,7 +417,10 @@ def emit_section(
 
 
 def update_python(
-    *, allow_major: bool = True, dry_run: bool = False
+    *,
+    allow_major: bool = True,
+    dry_run: bool = False,
+    add_latest: bool = False,
 ) -> tuple[dict[str, str], list[tuple[str, str, str]]]:
     original = PYPROJECT.read_text(encoding="utf-8")
     original_lock = UV_LOCK.read_bytes() if UV_LOCK.is_file() else None
@@ -402,7 +443,10 @@ def update_python(
         for package in packages:
             versions.setdefault(package["name"], []).append(package["version"])
         changes = update_pyproject_constraints(
-            versions, original=original, allow_major=allow_major
+            versions,
+            original=original,
+            allow_major=allow_major,
+            add_latest=add_latest,
         )
         if not dry_run:
             run(["uv", "lock"])
@@ -435,6 +479,8 @@ SKIP_DIRS = {".git", ".venv", "venv", "node_modules", ".tox", "__pycache__"}
 COMMENT_STARTS = ("#", "//", ";", "--", "/*", "*", "<!--", "%", "'", "REM ")
 # (file, name, ref) for every line left alone because of NO_AUTO_UPDATE.
 NO_AUTO_UPDATE_SKIPS: list[tuple[str, str, str]] = []
+# (file, image, digest_or_unpinned) for :latest images left alone by default.
+DOCKER_LATEST_SKIPS: list[tuple[str, str, str]] = []
 # Per-run caches so skip_reason and the updaters share one file walk each.
 _ACTION_FILES: list[Path] | None = None
 _DOCKERFILES: list[Path] | None = None
@@ -496,7 +542,7 @@ def has_NO_AUTO_UPDATE(text: str, pos: int) -> bool:
     return "NO_AUTO_UPDATE" in above and above.startswith(COMMENT_STARTS)
 
 
-def age_days(stamp: str) -> int | None:
+def parse_timestamp(stamp: str) -> datetime | None:
     text = stamp.replace("Z", "+00:00")
     try:
         when = datetime.fromisoformat(text)
@@ -504,7 +550,21 @@ def age_days(stamp: str) -> int | None:
         return None
     if when.tzinfo is None:
         when = when.replace(tzinfo=UTC)
+    return when
+
+
+def age_days(stamp: str) -> int | None:
+    when = parse_timestamp(stamp)
+    if when is None:
+        return None
     return (datetime.now(UTC) - when).days
+
+
+def age_hours(stamp: str) -> float | None:
+    when = parse_timestamp(stamp)
+    if when is None:
+        return None
+    return (datetime.now(UTC) - when).total_seconds() / 3600
 
 
 def freshness(
@@ -652,7 +712,10 @@ def action_comment(existing: str, tag: str) -> str:
 
 
 def update_actions(
-    *, dry_run: bool = False, allow_major: bool = True
+    *,
+    dry_run: bool = False,
+    allow_major: bool = True,
+    min_age_hours: int = DEFAULT_MIN_AGE_HOURS,
 ) -> list[tuple[str, str, str, str, str]]:
     """Return table rows (kind, action, old, new, note) for each pin that moved."""
     rows: list[tuple[str, str, str, str, str]] = []
@@ -661,6 +724,7 @@ def update_actions(
     # should not pay for a commits API call.
     latest_tags: dict[str, str | None] = {}
     commits: dict[tuple[str, str], str | None] = {}
+    cooldown_repos: set[str] = set()
 
     def commit_sha(repo: str, ref: str, *, missing_ok: bool = False) -> str | None:
         if (repo, ref) not in commits:
@@ -709,20 +773,101 @@ def update_actions(
                 best, best_version = name, version
         return best or tag
 
+    def note_cooldown(
+        repo: str, latest: str, used: str | None, hours: float | None
+    ) -> None:
+        if repo in cooldown_repos:
+            return
+        cooldown_repos.add(repo)
+        age = f"{hours:.0f}h old" if hours is not None else "age unknown"
+        if used:
+            note = f"{age}; --min-age {min_age_hours}h"
+            rows.append(("cooldown", repo, latest, used, note))
+        else:
+            note = f"{age}; no release meets --min-age {min_age_hours}h"
+            rows.append(("cooldown", repo, latest, "held", note))
+
     def latest_tag(repo: str) -> str | None:
-        if repo not in latest_tags:
-            result = run(
+        if repo in latest_tags:
+            return latest_tags[repo]
+
+        result = run(
+            ["gh", "api", f"repos/{repo}/releases?per_page=100"],
+            allow_not_found=True,
+        )
+        if result.returncode != 0:
+            console.print(f"[yellow]actions: no releases for {repo}, skipped[/]")
+            latest_tags[repo] = None
+            return None
+
+        # tag -> (version, published_at ISO, age hours). Skip floating majors (v3);
+        # full X.Y.Z releases carry the publish time we want for --min-age.
+        candidates: dict[str, tuple[Version, str, float | None]] = {}
+        for release in json.loads(result.stdout):
+            if release.get("draft") or release.get("prerelease"):
+                continue
+            tag = release.get("tag_name") or ""
+            if not is_full_semver(tag):
+                continue
+            published = release.get("published_at") or ""
+            try:
+                version = Version(tag)
+            except InvalidVersion:
+                continue
+            candidates[tag] = (
+                version,
+                published,
+                age_hours(published) if published else None,
+            )
+
+        if not candidates:
+            # Fall back for repos that only ship floating or non-semver tags.
+            latest = run(
                 ["gh", "api", f"repos/{repo}/releases/latest"], allow_not_found=True
             )
-            if result.returncode != 0:
+            if latest.returncode != 0:
                 console.print(
                     f"[yellow]actions: no latest release for {repo}, skipped[/]"
                 )
                 latest_tags[repo] = None
-            else:
-                tag = json.loads(result.stdout)["tag_name"]
-                latest_tags[repo] = prefer_full_semver(repo, tag) if tag else None
-        return latest_tags[repo]
+                return None
+            payload = json.loads(latest.stdout)
+            raw = payload.get("tag_name") or ""
+            tag = prefer_full_semver(repo, raw) if raw else ""
+            try:
+                Version(tag)
+            except InvalidVersion:
+                latest_tags[repo] = None
+                return None
+            published = payload.get("published_at") or ""
+            candidates[tag] = (
+                Version(tag),
+                published,
+                age_hours(published) if published else None,
+            )
+
+        absolute_tag = max(candidates, key=lambda t: candidates[t][0])
+        absolute_age = candidates[absolute_tag][2]
+
+        if min_age_hours <= 0:
+            latest_tags[repo] = absolute_tag
+            return absolute_tag
+
+        eligible = [
+            tag
+            for tag, (_ver, _pub, hours) in candidates.items()
+            if hours is not None and hours >= min_age_hours
+        ]
+        if not eligible:
+            note_cooldown(repo, absolute_tag, None, absolute_age)
+            latest_tags[repo] = None
+            return None
+
+        chosen = max(eligible, key=lambda t: candidates[t][0])
+        if chosen != absolute_tag:
+            note_cooldown(repo, absolute_tag, chosen, absolute_age)
+        latest_tags[repo] = chosen
+        return chosen
 
     def note_maintenance(name: str, repo: str, rel: str, suffix: str = "") -> None:
         status = github_freshness(repo)
@@ -909,7 +1054,22 @@ def image_digest(image: str, *, ecr_tokens: dict[str, str]) -> str:
     return manifest["digest"]
 
 
-def update_docker(*, dry_run: bool = False) -> list[tuple[str, str, str, str, str]]:
+def image_tag(image: str) -> str:
+    """Return the tag portion of a name:tag reference (default latest if untagged)."""
+    name = image.rsplit("/", 1)[-1]
+    if ":" in name:
+        return name.rsplit(":", 1)[-1]
+    return "latest"
+
+
+def is_latest_image(image: str) -> bool:
+    """True when the image tag is the floating latest tag."""
+    return image_tag(image).casefold() == "latest"
+
+
+def update_docker(
+    *, dry_run: bool = False, enable_latest: bool = False
+) -> list[tuple[str, str, str, str, str]]:
     """Pin or refresh image digests. Return rows (kind, image, old, new, dockerfile)."""
     rows: list[tuple[str, str, str, str, str]] = []
     digests: dict[str, str] = {}
@@ -939,6 +1099,9 @@ def update_docker(*, dry_run: bool = False) -> list[tuple[str, str, str, str, st
                     rows.append((status[0], image, status[1], status[2], rel))
             if has_NO_AUTO_UPDATE(text, match.start()):
                 NO_AUTO_UPDATE_SKIPS.append((rel, ref, match["digest"] or "unpinned"))
+                return match[0]
+            if is_latest_image(image) and not enable_latest:
+                DOCKER_LATEST_SKIPS.append((rel, image, match["digest"] or "unpinned"))
                 return match[0]
             if image not in digests:
                 digest = image_digest(image, ecr_tokens=ecr_tokens)
@@ -1059,6 +1222,14 @@ def print_NO_AUTO_UPDATE() -> None:
         )
 
 
+def print_docker_latest_skips() -> None:
+    for path, image, ref in DOCKER_LATEST_SKIPS:
+        console.print(
+            f"[bold yellow]latest[/]  {image}@{short_rev(ref)} left as-is "
+            f"[dim]({path}; --enable-docker-latest-to-sha-updates)[/]"
+        )
+
+
 def print_hooks(changes: list[tuple[str, str, str]]) -> None:
     rows = []
     for repo, old, new in changes:
@@ -1111,7 +1282,35 @@ def main() -> None:
             "Hold major upgrades: pin actions in place and keep Python upper bounds."
         ),
     )
+    parser.add_argument(
+        "--min-age",
+        type=int,
+        default=DEFAULT_MIN_AGE_HOURS,
+        metavar="HOURS",
+        help=(
+            "Actions: adopt the newest release at least this many hours old "
+            f"(default: {DEFAULT_MIN_AGE_HOURS}). Use 0 for the absolute latest."
+        ),
+    )
+    parser.add_argument(
+        "--enable-docker-latest-to-sha-updates",
+        action="store_true",
+        help=(
+            "Pin or refresh digests for images tagged latest (including untagged "
+            "FROM lines). Skipped by default."
+        ),
+    )
+    parser.add_argument(
+        "--add-python-latest-version",
+        action="store_true",
+        help=(
+            "Write >= floors for unversioned Python requirements from the "
+            "upgraded lock (e.g. fastmcp -> fastmcp>=x.y.z)."
+        ),
+    )
     args = parser.parse_args()
+    if args.min_age < 0:
+        parser.error("--min-age must be >= 0")
     selected = [args.only] if args.only else ["python", "actions", "docker", "hooks"]
     ecosystems: set[str] = set()
     for ecosystem in selected:
@@ -1137,7 +1336,9 @@ def main() -> None:
             python_before = parse_uv_lock()
             python_direct = parse_pyproject_direct()
             python_after, changes = update_python(
-                allow_major=args.allow_major, dry_run=args.dry_run
+                allow_major=args.allow_major,
+                dry_run=args.dry_run,
+                add_latest=args.add_python_latest_version,
             )
             maintenance = python_maintenance(python_direct)
         print_python(
@@ -1150,18 +1351,24 @@ def main() -> None:
     if "actions" in ecosystems:
         with console.status("[cyan]actions[/]", spinner="dots"):
             action_changes = update_actions(
-                dry_run=args.dry_run, allow_major=args.allow_major
+                dry_run=args.dry_run,
+                allow_major=args.allow_major,
+                min_age_hours=args.min_age,
             )
         print_actions(action_changes)
     if "docker" in ecosystems:
         with console.status("[cyan]docker[/]", spinner="dots"):
-            docker_changes = update_docker(dry_run=args.dry_run)
+            docker_changes = update_docker(
+                dry_run=args.dry_run,
+                enable_latest=args.enable_docker_latest_to_sha_updates,
+            )
         print_docker(docker_changes)
     if "hooks" in ecosystems:
         with console.status("[cyan]hooks[/]", spinner="dots"):
             hook_changes = update_hooks(dry_run=args.dry_run)
         print_hooks(hook_changes)
     print_NO_AUTO_UPDATE()
+    print_docker_latest_skips()
 
 
 if __name__ == "__main__":
