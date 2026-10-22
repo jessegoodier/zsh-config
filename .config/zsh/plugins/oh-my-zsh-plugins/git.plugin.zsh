@@ -28,24 +28,20 @@ function git_main_branch() {
   command git rev-parse --git-dir &>/dev/null || return
 
   local remote ref
+  for remote in origin upstream; do
+    ref=$(command git symbolic-ref --quiet --short refs/remotes/$remote/HEAD 2>/dev/null) || continue
+    echo ${ref#*/}
+    return 0
+  done
 
-  for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk,mainline,default,stable,master}; do
-    if command git show-ref -q --verify $ref; then
-      echo ${ref:t}
+  for ref in main trunk mainline default stable master; do
+    if command git show-ref -q --verify refs/heads/$ref; then
+      echo $ref
       return 0
     fi
   done
 
-  # Fallback: try to get the default branch from remote HEAD symbolic refs
-  for remote in origin upstream; do
-    ref=$(command git rev-parse --abbrev-ref $remote/HEAD 2>/dev/null)
-    if [[ $ref == $remote/* ]]; then
-      echo ${ref#"$remote/"}; return 0
-    fi
-  done
-
-  # If no main branch was found, fall back to master but return error
-  echo master
+  echo ${$(command git config --get init.defaultBranch):-master}
   return 1
 }
 
