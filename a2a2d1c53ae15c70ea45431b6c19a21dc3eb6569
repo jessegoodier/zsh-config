@@ -1,0 +1,42 @@
+scripts/update_dependencies.py
+  s_0bf550773c584e::t_93d9d4f7ce21fd 200
+  s_0bf550773c584e::t_97b04489df168f 1020-1023
+  s_0bf550773c584e::t_8f48bb7f6e18c9 332-337
+  s_0bf550773c584e::t_8999e18d04b74e 167
+  s_0bf550773c584e::t_a23546b1e8050b 645
+  s_0bf550773c584e::t_daa875c8fe1377 786-792
+  s_0bf550773c584e::t_c9b6e7589c158a 13
+  s_0bf550773c584e::t_7fcada707df434 1060-1069
+  s_0bf550773c584e::t_6b2fe1042aaa5f 358-367
+  s_0bf550773c584e::t_ec74481813655c 32-36
+  s_0bf550773c584e::t_ddd5f44f382275 187
+  s_0bf550773c584e::t_8b29962e8520bb 380
+  s_0bf550773c584e::t_065bfeeffd726f 525
+Dockerfile
+  h_cca6aa2712613d 2-3
+pyproject.toml
+  h_cca6aa2712613d 8
+uv.lock
+  h_cca6aa2712613d 103,110,112,117,124,126,136,138,140,174,176,178,490,495,497,502,513,515,556,558,560,565,567,569,583,589,591,596,605,607,699,704,706,898,900,902,1058,1066,1068,1203,1208,1210,1426,1431,1433,1473,1478,1480,1546,1555,1557,1601-1685,1713
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a2a2d1c53ae15c70ea45431b6c19a21dc3eb6569",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_0bf550773c584e": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "a938fa60-94c1-4a0f-962c-e07760de3c0d",
+        "model": "grok-4.7"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
