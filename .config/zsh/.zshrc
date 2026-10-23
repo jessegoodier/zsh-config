@@ -13,6 +13,8 @@ done
 # Global tools from ~/.venv stay on PATH, but do not `activate` (that sets
 # VIRTUAL_ENV and makes uv ignore a project .venv). Prefer the cwd venv when
 # present so VS Code/direnv/uv all see the same environment.
+# -U drops duplicate entries when this file is sourced again.
+typeset -U path
 if [[ -d $HOME/.venv/bin ]]; then
 	path=($HOME/.venv/bin $path)
 fi
@@ -30,5 +32,9 @@ fi
 zsh-defer -c "[[ -r $ZSH_CONFIG_DIR/functions.zsh ]] && source $ZSH_CONFIG_DIR/functions.zsh"
 
 if [[ -d $HOME/.git-ai/bin ]]; then
-	export PATH="$HOME/.git-ai/bin:$PATH"
+	path=($HOME/.git-ai/bin $path)
+fi
+
+if [[ -d $HOME/.antigravity-ide/antigravity-ide/bin ]]; then
+	path=($HOME/.antigravity-ide/antigravity-ide/bin $path)
 fi
