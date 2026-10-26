@@ -1,0 +1,32 @@
+scripts/update_dependencies.py
+  s_f570a139eca5b2::t_77af92fe32e083 62-63
+  s_f570a139eca5b2::t_87d39c4cf70010 1361-1363,1418,1449
+  s_f570a139eca5b2::t_2f2c9d744911ce 1466-1469
+  s_f570a139eca5b2::t_47e7a998f83167 1339-1340
+  s_f570a139eca5b2::t_a64428fb66e15c 1435-1436,1451
+  s_f570a139eca5b2::t_d979b704ae1334 122
+  s_f570a139eca5b2::t_4979d44d7a4900 1269-1282,1333-1337,1342-1345,1347-1348,1353-1357,1360,1364-1369,1374-1377,1382-1388,1393-1399,1404-1407,1409-1414,1417,1419-1434,1437-1448,1450,1452-1453,1465,1495,1519-1526,1530-1534,1536-1537
+  s_f570a139eca5b2::t_e1edfe01192765 1535
+  s_f570a139eca5b2::t_aa5858508d6c2b 110
+  s_f570a139eca5b2::t_a9fc3f554e6ab1 6,17
+  s_f570a139eca5b2::t_dcaff84a709282 15-16,34-36,47-49
+  s_f570a139eca5b2::t_39f7f30d67e744 98,107
+  s_f570a139eca5b2::t_02d748ae969477 1283-1332,1338,1341,1346,1349-1352,1358-1359,1370-1373,1378-1381,1389-1392,1400-1403,1408,1415-1416
+  s_f570a139eca5b2::t_1b1480d58e5a28 1496-1502,1508
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "eee317f966e36f154c2c4d0153fefef4cde4b696",
+  "prompts": {},
+  "sessions": {
+    "s_f570a139eca5b2": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "bb43c145-cc2a-4aeb-a3be-69d51c8cbf08",
+        "model": "default"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
