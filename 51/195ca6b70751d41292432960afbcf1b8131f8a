@@ -1,0 +1,18 @@
+.github/workflows/ci.yml
+  h_cca6aa2712613d 19,30
+.github/workflows/security.yml
+  h_cca6aa2712613d 40,44
+.github/workflows/update-dependencies.yml
+  h_cca6aa2712613d 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "51195ca6b70751d41292432960afbcf1b8131f8a",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
