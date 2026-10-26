@@ -3,6 +3,7 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "packaging>=24.3.0",
+#     "questionary>=2.1.0",
 #     "rich>=14.0.0",
 # ]
 # ///
@@ -11,8 +12,9 @@
 
 USAGE
     update_dependencies.py [--dry-run] [--only ECOSYSTEM] [--no-major-version-updates]
-                           [--min-age HOURS] [--enable-docker-latest-to-sha-updates]
-                           [--add-python-latest-version]
+                           [--min-age HOURS] [--update-docker-tags]
+                           [--enable-docker-latest-to-sha-updates]
+                           [--add-python-latest-version] [--tui]
 
     Run it from the root of the repo you want to update. The current working
     directory is that root; where this script lives does not matter. Ecosystems
@@ -29,8 +31,9 @@ ECOSYSTEMS
              comment (full semver when a same-commit X.Y.Z tag exists; floating
              majors like v3 from /releases/latest are expanded).
     docker   every FROM line in Dockerfile*, *.Dockerfile, Containerfile (found
-             anywhere in the repo) is pinned to an image digest. Images tagged
-             latest (or untagged, which implies latest) are skipped unless
+             anywhere in the repo) is pinned to an image digest. Off by default;
+             pass --update-docker-tags (or --only docker). Images tagged latest
+             (or untagged, which implies latest) are skipped unless
              --enable-docker-latest-to-sha-updates is set.
     hooks    `pre-commit autoupdate --freeze`.
 
@@ -41,6 +44,9 @@ OPTIONS
                    48). Still moves to the newest release that clears the
                    cooldown; prints a cooldown row when that is not the absolute
                    latest. --min-age 0 takes the absolute latest.
+    --update-docker-tags
+                   Include docker image digest updates. Skipped by default
+                   (unless --only docker).
     --enable-docker-latest-to-sha-updates
                    Pin or refresh digests for images tagged latest (including
                    untagged FROM lines, which imply :latest). Skipped by default.
@@ -53,6 +59,8 @@ OPTIONS
                    reported as "held" and the current version is only pinned in
                    place; Python upper bounds (<N) are kept. Major upgrades are
                    applied by default (--allow-major is accepted and is a no-op).
+    --tui          Interactive prompts to pick ecosystems and options. Other
+                   flags seed the defaults. Requires a TTY.
 
 NO_AUTO_UPDATE
     Everything is pinned unless the line opts out. Put NO_AUTO_UPDATE in a comment on the
@@ -87,6 +95,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 import tomllib
 import urllib.parse
@@ -95,8 +104,10 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 
+import questionary
 from packaging.requirements import InvalidRequirement, Requirement
 from packaging.version import InvalidVersion, Version
+from questionary.prompts import common as qcommon
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -108,6 +119,7 @@ ROOT = Path.cwd().resolve()
 PYPROJECT = ROOT / "pyproject.toml"
 UV_LOCK = ROOT / "uv.lock"
 PRE_COMMIT = ROOT / ".pre-commit-config.yaml"
+ECOSYSTEMS = ("python", "actions", "docker", "hooks")
 
 
 def run(
@@ -1254,6 +1266,191 @@ def skip_reason(ecosystem: str) -> str | None:
     return None
 
 
+def default_ecosystems(args: argparse.Namespace) -> list[str]:
+    """Ecosystems implied by CLI flags before any TUI override."""
+    if args.only:
+        return [args.only]
+    selected = ["python", "actions", "hooks"]
+    if args.update_docker_tags or args.enable_docker_latest_to_sha_updates:
+        selected = ["python", "actions", "docker", "hooks"]
+    return selected
+
+
+def _tui_cancelled() -> None:
+    raise SystemExit("cancelled")
+
+
+# Focus is a quiet cyan caret; checked state is a green checkbox (not a lit row).
+TUI_STYLE = questionary.Style(
+    [
+        ("qmark", "fg:cyan bold"),
+        ("question", "bold fg:white"),
+        ("answer", "fg:green bold"),
+        ("pointer", "fg:cyan bold"),
+        ("highlighted", "fg:cyan"),
+        ("selected", "fg:green bold"),
+        ("separator", "fg:cyan"),
+        ("instruction", "fg:#6c7086 italic"),
+        ("text", "fg:#cdd6f4"),
+        ("disabled", "fg:#6c7086 italic"),
+        ("default", "fg:#a6adc8"),
+        ("hint", "fg:#6c7086"),
+        ("eco", "fg:cyan bold"),
+        ("opt", "fg:yellow"),
+    ]
+)
+
+ECOSYSTEM_HINTS = {
+    "python": "pyproject.toml + uv.lock",
+    "actions": ".github workflows → SHA pins",
+    "docker": "Dockerfile FROM → digests",
+    "hooks": "pre-commit autoupdate --freeze",
+}
+
+
+def _tui_checkbox(message: str, choices: list, **kwargs):
+    """Checkbox prompt: ☑/☐ marks selection; pointer shows focus only."""
+    return questionary.checkbox(
+        message,
+        choices=choices,
+        style=TUI_STYLE,
+        qmark="❯",
+        pointer="›",
+        instruction="  space toggle · a all · enter confirm",
+        **kwargs,
+    )
+
+
+def _tui_text(message: str, **kwargs):
+    return questionary.text(
+        message,
+        style=TUI_STYLE,
+        qmark="❯",
+        **kwargs,
+    )
+
+
+def prompt_tui(args: argparse.Namespace) -> argparse.Namespace:
+    """Fill args from interactive prompts; CLI flags seed the defaults."""
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        raise SystemExit("--tui requires an interactive terminal")
+
+    # questionary defaults to ●/○ (radio look); use real checkboxes instead.
+    qcommon.INDICATOR_SELECTED = "☑"
+    qcommon.INDICATOR_UNSELECTED = "☐"
+
+    defaults = set(default_ecosystems(args))
+    eco_choices = []
+    for ecosystem in ECOSYSTEMS:
+        reason = skip_reason(ecosystem)
+        hint = ECOSYSTEM_HINTS[ecosystem]
+        eco_choices.append(
+            questionary.Choice(
+                title=[
+                    ("class:eco", f"{ecosystem:<7}"),
+                    ("class:hint", f"  {hint}"),
+                ],
+                value=ecosystem,
+                checked=ecosystem in defaults and reason is None,
+                disabled=reason,
+            )
+        )
+    selected = _tui_checkbox(
+        "Ecosystems to update",
+        choices=eco_choices,
+        validate=lambda picked: (
+            True if picked else "Select at least one available ecosystem"
+        ),
+    ).ask()
+    if selected is None:
+        _tui_cancelled()
+
+    option_choices = [
+        questionary.Choice(
+            title=[
+                ("class:opt", "dry-run"),
+                ("class:hint", "  preview only, no file changes"),
+            ],
+            value="dry_run",
+            checked=args.dry_run,
+        ),
+        questionary.Choice(
+            title=[
+                ("class:opt", "hold majors"),
+                ("class:hint", "  pin in place / keep Python upper bounds"),
+            ],
+            value="no_major",
+            checked=not args.allow_major,
+        ),
+    ]
+    if "python" in selected:
+        option_choices.append(
+            questionary.Choice(
+                title=[
+                    ("class:opt", "python floors"),
+                    ("class:hint", "  write >= for unversioned requirements"),
+                ],
+                value="add_python_latest",
+                checked=args.add_python_latest_version,
+            )
+        )
+    if "docker" in selected:
+        option_choices.append(
+            questionary.Choice(
+                title=[
+                    ("class:opt", "docker latest"),
+                    ("class:hint", "  also pin/refresh :latest / untagged"),
+                ],
+                value="docker_latest",
+                checked=args.enable_docker_latest_to_sha_updates,
+            )
+        )
+    options = _tui_checkbox("Options", choices=option_choices).ask()
+    if options is None:
+        _tui_cancelled()
+    options_set = set(options)
+
+    min_age = args.min_age
+    if "actions" in selected:
+        answer = _tui_text(
+            "Actions release min-age (hours)",
+            default=str(args.min_age),
+            validate=lambda text: True if text.isdigit() else "Enter an integer >= 0",
+        ).ask()
+        if answer is None:
+            _tui_cancelled()
+        min_age = int(answer)
+
+    args.ecosystems = list(selected)
+    args.dry_run = "dry_run" in options_set
+    args.allow_major = "no_major" not in options_set
+    args.add_python_latest_version = "add_python_latest" in options_set
+    args.enable_docker_latest_to_sha_updates = "docker_latest" in options_set
+    args.update_docker_tags = "docker" in selected
+    args.min_age = min_age
+    args.only = None
+    return args
+
+
+def resolve_ecosystems(args: argparse.Namespace, *, only_mode: bool) -> set[str]:
+    """Return ecosystems that will run; print skips for unavailable selections."""
+    selected = (
+        list(args.ecosystems)
+        if getattr(args, "ecosystems", None) is not None
+        else default_ecosystems(args)
+    )
+    ecosystems: set[str] = set()
+    for ecosystem in selected:
+        reason = skip_reason(ecosystem)
+        if reason is None:
+            ecosystems.add(ecosystem)
+            continue
+        if only_mode:
+            raise SystemExit(f"{ecosystem} updates need a project file ({reason})")
+        console.print(f"[bold cyan]{ecosystem:<7}[/] [dim]skipped ({reason})[/]")
+    return ecosystems
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -1265,8 +1462,11 @@ def main() -> None:
     )
     parser.add_argument(
         "--only",
-        choices=("python", "actions", "docker", "hooks"),
-        help="Update one ecosystem. Default: python, actions, docker, and hooks.",
+        choices=ECOSYSTEMS,
+        help=(
+            "Update one ecosystem. Default: python, actions, and hooks "
+            "(docker needs --update-docker-tags)."
+        ),
     )
     parser.add_argument(
         "--allow-major",
@@ -1293,11 +1493,19 @@ def main() -> None:
         ),
     )
     parser.add_argument(
+        "--update-docker-tags",
+        action="store_true",
+        help=(
+            "Include docker image digest updates. Skipped by default "
+            "(unless --only docker)."
+        ),
+    )
+    parser.add_argument(
         "--enable-docker-latest-to-sha-updates",
         action="store_true",
         help=(
             "Pin or refresh digests for images tagged latest (including untagged "
-            "FROM lines). Skipped by default."
+            "FROM lines). Skipped by default. Implies --update-docker-tags."
         ),
     )
     parser.add_argument(
@@ -1308,19 +1516,25 @@ def main() -> None:
             "upgraded lock (e.g. fastmcp -> fastmcp>=x.y.z)."
         ),
     )
+    parser.add_argument(
+        "--tui",
+        action="store_true",
+        help=(
+            "Interactive prompts to pick ecosystems and options. Other flags "
+            "seed the defaults. Requires a TTY."
+        ),
+    )
     args = parser.parse_args()
     if args.min_age < 0:
         parser.error("--min-age must be >= 0")
-    selected = [args.only] if args.only else ["python", "actions", "docker", "hooks"]
-    ecosystems: set[str] = set()
-    for ecosystem in selected:
-        reason = skip_reason(ecosystem)
-        if reason is None:
-            ecosystems.add(ecosystem)
-            continue
-        if args.only:
-            parser.error(f"{ecosystem} updates need a project file ({reason})")
-        console.print(f"[bold cyan]{ecosystem:<7}[/] [dim]skipped ({reason})[/]")
+    args.ecosystems = None
+    only_mode = args.only is not None
+    if args.tui:
+        prompt_tui(args)
+        only_mode = False
+    ecosystems = resolve_ecosystems(args, only_mode=only_mode)
+    if not ecosystems:
+        raise SystemExit("nothing to update")
     required = {"uv"}
     if "actions" in ecosystems:
         required.add("gh")
