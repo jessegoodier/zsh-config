@@ -103,4 +103,3 @@ zsh-defer -c '_KUBE_PROMPT_READY=1; _kube_prompt; zle && zle reset-prompt'
 
 # --- Extra files (last so they can override) ---
 (( $+commands[direnv] )) && eval "$(direnv hook zsh)"
-[[ -f ~/.keys ]] && source ~/.keys

@@ -12,7 +12,7 @@
 
 USAGE
     update_dependencies.py [--dry-run] [--only ECOSYSTEM] [--no-major-version-updates]
-                           [--min-age HOURS] [--update-docker-tags]
+                           [--min-age HOURS]
                            [--enable-docker-latest-to-sha-updates]
                            [--add-python-latest-version] [--tui]
 
@@ -25,14 +25,19 @@ ECOSYSTEMS
     python   pyproject.toml + uv.lock: relax exact pins, `uv lock --upgrade`,
              then raise the minimum versions in pyproject.toml. Unversioned
              requirements stay bare unless --add-python-latest-version writes
-             a >= floor from the lock.
+             a >= floor from the lock. Also sets the `uv_build` floor in
+             [build-system]: by default to the uv version of a
+             `FROM ghcr.io/astral-sh/uv:X.Y.Z` image in a Dockerfile; with
+             --add-python-latest-version, the newest uv_build on PyPI that
+             clears the --min-age cooldown becomes the target: the Dockerfile
+             uv image tag is raised to it (digest dropped, the docker step
+             re-pins it) and the floor follows the image. Never lowered.
     actions  every `uses: owner/repo@ref` in .github/**/*.yml (workflows and
              composite actions) is pinned to a commit SHA with a `# vX.Y.Z`
              comment (full semver when a same-commit X.Y.Z tag exists; floating
              majors like v3 from /releases/latest are expanded).
     docker   every FROM line in Dockerfile*, *.Dockerfile, Containerfile (found
-             anywhere in the repo) is pinned to an image digest. Off by default;
-             pass --update-docker-tags (or --only docker). Images tagged latest
+             anywhere in the repo) is pinned to an image digest. Images tagged latest
              (or untagged, which implies latest) are skipped unless
              --enable-docker-latest-to-sha-updates is set.
     hooks    `pre-commit autoupdate --freeze`.
@@ -40,19 +45,20 @@ ECOSYSTEMS
 OPTIONS
     --dry-run      Show what would change and leave every file as it was.
     --only X       Run a single ecosystem (python, actions, docker, hooks).
-    --min-age N    Actions only: ignore releases younger than N hours (default
+    --min-age N    Actions and uv_build: ignore releases younger than N hours (default
                    48). Still moves to the newest release that clears the
                    cooldown; prints a cooldown row when that is not the absolute
                    latest. --min-age 0 takes the absolute latest.
     --update-docker-tags
-                   Include docker image digest updates. Skipped by default
-                   (unless --only docker).
+                   Accepted and ignored: docker digest updates run by default.
     --enable-docker-latest-to-sha-updates
                    Pin or refresh digests for images tagged latest (including
                    untagged FROM lines, which imply :latest). Skipped by default.
     --add-python-latest-version
                    Write >= floors for unversioned Python requirements (e.g.
-                   fastmcp -> fastmcp>=x.y.z) from the upgraded lock. Off by
+                   fastmcp -> fastmcp>=x.y.z) from the upgraded lock, and raise
+                   the [build-system] uv_build floor to the newest release that
+                   clears --min-age. Off by
                    default.
     --no-major-version-updates
                    Hold major upgrades. A new major release of an action is
@@ -104,10 +110,9 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 
-import questionary
 from packaging.requirements import InvalidRequirement, Requirement
+from packaging.specifiers import SpecifierSet
 from packaging.version import InvalidVersion, Version
-from questionary.prompts import common as qcommon
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
@@ -215,9 +220,39 @@ def relax_spec(spec: str, req: Requirement, *, allow_major: bool = True) -> str:
     return updated
 
 
-def relax_constraints(text: str, *, allow_major: bool = True) -> str:
-    """Let uv resolve exact pins; retain marker-specific major lines and bounds."""
+def frozen_requirement(spec: str, version: str) -> str:
+    """Replace whatever specifier `spec` has with an exact pin, keeping extras and markers."""
+    body, marker = (spec.split(";", 1) + [""])[:2]
+    base = re.split(r"\s*(?:==|>=|<=|!=|~=|===|>|<)", body.strip(), maxsplit=1)[0]
+    suffix = f";{marker}" if marker else ""
+    return f"{base}=={version}{suffix}"
+
+
+def freeze_opted_out(text: str, locked: Mapping[str, str]) -> str:
+    """Hold NO_AUTO_UPDATE requirements at their locked version for this resolve.
+
+    `uv lock --upgrade` will not move a requirement that is pinned to the version
+    already in the lock. The original text is what gets written back afterwards.
+    """
     for start, end, spec, req in reversed(list(dependency_specs(text))):
+        if not has_NO_AUTO_UPDATE(text, start):
+            continue
+        version = locked.get(pep508_name(req.name))
+        if not version:
+            continue
+        text = text[:start] + frozen_requirement(spec, version) + text[end:]
+    return text
+
+
+def relax_constraints(text: str, *, allow_major: bool = True) -> str:
+    """Let uv resolve exact pins; retain marker-specific major lines and bounds.
+
+    A requirement whose line, or the comment on the line above, contains
+    NO_AUTO_UPDATE keeps its current specifier.
+    """
+    for start, end, spec, req in reversed(list(dependency_specs(text))):
+        if has_NO_AUTO_UPDATE(text, start):
+            continue
         text = (
             text[:start] + relax_spec(spec, req, allow_major=allow_major) + text[end:]
         )
@@ -242,6 +277,9 @@ def update_pyproject_constraints(
     changes = []
     text = original
     for start, end, spec, req in reversed(list(dependency_specs(original))):
+        if has_NO_AUTO_UPDATE(original, start):
+            NO_AUTO_UPDATE_SKIPS.append(("pyproject.toml", spec, "unchanged"))
+            continue
         relaxed = Requirement(relax_spec(spec, req, allow_major=allow_major))
         candidates = [
             v
@@ -445,9 +483,9 @@ def update_python(
             UV_LOCK.write_bytes(original_lock)
 
     try:
-        PYPROJECT.write_text(
-            relax_constraints(original, allow_major=allow_major), encoding="utf-8"
-        )
+        relaxed = relax_constraints(original, allow_major=allow_major)
+        relaxed = freeze_opted_out(relaxed, parse_uv_lock())
+        PYPROJECT.write_text(relaxed, encoding="utf-8")
         run(["uv", "lock", "--upgrade"])
         with UV_LOCK.open("rb") as handle:
             packages = tomllib.load(handle).get("package", [])
@@ -470,6 +508,182 @@ def update_python(
     if dry_run:
         restore()
     return after, changes
+
+
+UV_IMAGE_RE = re.compile(
+    r"^(?P<prefix>[ \t]*FROM[ \t]+(?:--\S+[ \t]+)*ghcr\.io/astral-sh/uv:)"
+    r"(?P<version>\d+(?:\.\d+)*)(?P<digest>@sha256:[0-9a-f]{64})?(?=[ \t]|$)",
+    re.MULTILINE | re.IGNORECASE,
+)
+UV_BUILD_RE = re.compile(r'"(?P<spec>uv[-_.]build\b[^"\n]*)"', re.IGNORECASE)
+
+
+def dockerfile_uv_version() -> str | None:
+    """uv version pinned by a `FROM ghcr.io/astral-sh/uv:X.Y.Z` line, if any."""
+    versions = {
+        match["version"]
+        for path in find_dockerfiles()
+        for match in UV_IMAGE_RE.finditer(path.read_text())
+    }
+    if len(versions) > 1:
+        console.print(
+            f"[yellow]python: Dockerfiles pin different uv versions "
+            f"({', '.join(sorted(versions, key=Version))}), uv_build left as-is[/]"
+        )
+        return None
+    return next(iter(versions), None)
+
+
+def latest_uv_build(
+    min_age_hours: int,
+) -> tuple[str | None, list[tuple[str, str, str, str, str]]]:
+    """Newest uv_build on PyPI that is at least min_age_hours old, plus note rows.
+
+    Same cooldown as GitHub Actions releases: a newer release inside the window
+    is reported as a cooldown row and the newest older one is used instead.
+    """
+    data = fetch_json("https://pypi.org/pypi/uv-build/json")
+    releases = data.get("releases") if data else None
+    if not isinstance(releases, dict):
+        console.print("[yellow]python: could not read uv_build releases, skipped[/]")
+        return None, []
+    # version -> hours since first upload, for stable, un-yanked releases.
+    ages: dict[Version, float | None] = {}
+    for name, files in releases.items():
+        try:
+            version = Version(name)
+        except InvalidVersion:
+            continue
+        live = [
+            item for item in files if isinstance(item, dict) and not item.get("yanked")
+        ]
+        if version.is_prerelease or version.is_devrelease or not live:
+            continue
+        stamps = [
+            hours
+            for item in live
+            if isinstance(item.get("upload_time_iso_8601"), str)
+            and (hours := age_hours(item["upload_time_iso_8601"])) is not None
+        ]
+        ages[version] = max(stamps) if stamps else None
+    if not ages:
+        return None, []
+    newest = max(ages)
+    if min_age_hours <= 0:
+        return str(newest), []
+    eligible = [
+        v for v, hours in ages.items() if hours is not None and hours >= min_age_hours
+    ]
+    chosen = max(eligible) if eligible else None
+    rows: list[tuple[str, str, str, str, str]] = []
+    if chosen != newest:
+        hours = ages[newest]
+        age = f"{hours:.0f}h old" if hours is not None else "age unknown"
+        used = str(chosen) if chosen else "held"
+        note = f"{age}; --min-age {min_age_hours}h"
+        rows.append(("cooldown", "uv_build", str(newest), used, note))
+    return (str(chosen) if chosen else None), rows
+
+
+def bump_dockerfile_uv(
+    version: str, *, dry_run: bool
+) -> tuple[list[tuple[str, str, str, str, str]], bool]:
+    """Raise `FROM ghcr.io/astral-sh/uv:X` lines to version.
+
+    Returns (rows, blocked). The digest is dropped because it belongs to the old
+    tag; the docker ecosystem pins the new one. A line marked NO_AUTO_UPDATE is
+    left alone and sets blocked.
+    """
+    rows: list[tuple[str, str, str, str, str]] = []
+    blocked = False
+    for path in find_dockerfiles():
+        rel = str(path.relative_to(ROOT))
+        original = path.read_text()
+
+        def replace(match: re.Match[str], rel: str = rel, text: str = original) -> str:
+            nonlocal blocked
+            old = match["version"]
+            if Version(version) <= Version(old):
+                return match[0]
+            if has_NO_AUTO_UPDATE(text, match.start()):
+                NO_AUTO_UPDATE_SKIPS.append((rel, f"ghcr.io/astral-sh/uv:{old}", ""))
+                blocked = True
+                return match[0]
+            rows.append(("pin", "uv image", old, version, rel))
+            return f"{match['prefix']}{version}"
+
+        updated = UV_IMAGE_RE.sub(replace, original)
+        if updated != original and not dry_run:
+            path.write_text(updated)
+    return rows, blocked
+
+
+def sync_uv_build(
+    *, dry_run: bool = False, add_latest: bool = False, min_age_hours: int = 0
+) -> tuple[list[tuple[str, str, str]], list[tuple[str, str, str, str, str]]]:
+    """Keep the uv_build floor in [build-system] and the Dockerfile uv image aligned.
+
+    Default: the Dockerfile's uv version wins, and the uv_build floor is set to it.
+    With add_latest: the newest uv_build release that clears the min-age cooldown
+    becomes the target. The Dockerfile uv image is raised to it too (never lowered),
+    and the floor then follows the image. With no Dockerfile pin, the floor is only
+    raised.
+    """
+    notes: list[tuple[str, str, str, str, str]] = []
+    image = dockerfile_uv_version()
+    version = image
+    if add_latest:
+        latest, notes = latest_uv_build(min_age_hours)
+        candidates = [v for v in (image, latest) if v is not None]
+        version = max(candidates, key=Version) if candidates else None
+        if version is not None and image is not None:
+            rows, blocked = bump_dockerfile_uv(version, dry_run=dry_run)
+            notes = notes + rows
+            if blocked:
+                version = image
+    if version is None:
+        return [], notes
+    return _write_uv_build_floor(version, dry_run, raise_only=image is None), notes
+
+
+def _write_uv_build_floor(
+    version: str, dry_run: bool, *, raise_only: bool
+) -> list[tuple[str, str, str]]:
+    text = PYPROJECT.read_text(encoding="utf-8")
+    header = re.search(r"^\[build-system\][ \t]*$", text, re.MULTILINE)
+    if header is None:
+        return []
+    next_table = re.compile(r"^\[", re.MULTILINE).search(text, header.end())
+    section_end = next_table.start() if next_table else len(text)
+    match = UV_BUILD_RE.search(text, header.end(), section_end)
+    if match is None:
+        return []
+    start = match.start("spec")
+    spec = match["spec"]
+    if has_NO_AUTO_UPDATE(text, start):
+        NO_AUTO_UPDATE_SKIPS.append(("pyproject.toml", spec, "unchanged"))
+        return []
+    requirement = Requirement(spec)
+    floors = [c for c in requirement.specifier if c.operator == ">="]
+    if len(floors) != 1:
+        console.print(f"[yellow]python: {spec!r} has no single >= floor, skipped[/]")
+        return []
+    if Version(version) not in SpecifierSet(
+        ",".join(str(c) for c in requirement.specifier if c.operator != ">=")
+    ):
+        console.print(
+            f"[yellow]python: uv {version} is outside the bounds of {spec!r}, skipped[/]"
+        )
+        return []
+    if raise_only and Version(version) <= Version(floors[0].version):
+        return []
+    updated = spec.replace(str(floors[0]), f">={version}", 1)
+    if updated == spec:
+        return []
+    if not dry_run:
+        end = start + len(spec)
+        PYPROJECT.write_text(text[:start] + updated + text[end:], encoding="utf-8")
+    return [("uv_build", spec, updated)]
 
 
 ACTION_RE = re.compile(
@@ -923,10 +1137,7 @@ def update_actions(
                 if sha:
                     note_maintenance(action, repo, rel, "replaced")
                     watch_name, watch_repo = new_action, replacement
-                    updated = (
-                        f"{match['prefix']}{new_action}@{sha}"
-                        f"{action_comment(match['comment'], tag)}"
-                    )
+                    updated = f"{match['prefix']}{new_action}@{sha}{action_comment(match['comment'], tag)}"
                     rows.append(
                         ("pin", new_action, ref, tag, f"{rel} replaces {action}")
                     )
@@ -956,10 +1167,7 @@ def update_actions(
                 sha = commit_sha(repo, tag)
                 if not sha:
                     return finish(match[0])
-                updated = (
-                    f"{match['prefix']}{action}@{sha}"
-                    f"{action_comment(match['comment'], tag)}"
-                )
+                updated = f"{match['prefix']}{action}@{sha}{action_comment(match['comment'], tag)}"
                 if updated == match[0]:
                     return finish(match[0])
                 rows.append(("pin", action, old, tag, rel))
@@ -1142,6 +1350,8 @@ def update_docker(
 HOOK_UPDATE_RE = re.compile(
     r"Updating\s+(?P<repo>\S+).*?\bupdating\s+(?P<old>\S+)\s+->\s+(?P<new>\S+)"
 )
+HOOK_REPO_RE = re.compile(r"(?m)^[ \t]*-[ \t]*repo:[ \t]*(?P<repo>\S+)[ \t]*$")
+HOOK_REV_RE = re.compile(r"(?m)^[ \t]*rev:[ \t]*(?P<rev>\S+)")
 
 
 def repo_label(repo: str) -> str:
@@ -1152,24 +1362,90 @@ def repo_label(repo: str) -> str:
     return repo
 
 
+def precommit_repo_spans(text: str) -> list[tuple[int, int, str]]:
+    """(start, end, repo url) for each `- repo:` block in a pre-commit config."""
+    matches = list(HOOK_REPO_RE.finditer(text))
+    spans: list[tuple[int, int, str]] = []
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        spans.append((match.start(), end, match["repo"]))
+    return spans
+
+
+def _line_starts(text: str, start: int, end: int) -> list[int]:
+    positions = []
+    pos = start
+    while pos < end:
+        positions.append(pos)
+        newline = text.find("\n", pos, end)
+        if newline == -1:
+            break
+        pos = newline + 1
+    return positions
+
+
+def protected_hook_revs(text: str) -> dict[str, str]:
+    """Repo URL -> current rev, for repos opted out with NO_AUTO_UPDATE.
+
+    The marker counts on the repo line, on any line in that repo's block, or in
+    a comment on the line directly above the repo.
+    """
+    protected: dict[str, str] = {}
+    for start, end, repo in precommit_repo_spans(text):
+        if not any(
+            has_NO_AUTO_UPDATE(text, pos) for pos in _line_starts(text, start, end)
+        ):
+            continue
+        rev = HOOK_REV_RE.search(text, start, end)
+        if rev:
+            protected[repo] = rev["rev"]
+    return protected
+
+
+def restore_protected_hook_revs(original: str, updated: str) -> str:
+    """Put opted-out repos back on the rev they had before autoupdate."""
+    protected = protected_hook_revs(original)
+    for start, end, repo in reversed(precommit_repo_spans(updated)):
+        if repo not in protected:
+            continue
+        rev = HOOK_REV_RE.search(updated, start, end)
+        if not rev or rev["rev"] == protected[repo]:
+            continue
+        updated = (
+            updated[: rev.start("rev")] + protected[repo] + updated[rev.end("rev") :]
+        )
+    return updated
+
+
 def update_hooks(*, dry_run: bool = False) -> list[tuple[str, str, str]]:
-    original = PRE_COMMIT.read_bytes()
+    original_bytes = PRE_COMMIT.read_bytes()
+    original = original_bytes.decode()
+    protected = protected_hook_revs(original)
     try:
         result = run(["uv", "run", "pre-commit", "autoupdate", "--freeze"])
+        if protected and not dry_run:
+            current = PRE_COMMIT.read_text(encoding="utf-8")
+            restored = restore_protected_hook_revs(original, current)
+            if restored != current:
+                PRE_COMMIT.write_text(restored, encoding="utf-8")
     finally:
         if dry_run:
-            PRE_COMMIT.write_bytes(original)
+            PRE_COMMIT.write_bytes(original_bytes)
+    protected_labels = {repo_label(repo) for repo in protected}
+    for repo, rev in protected.items():
+        NO_AUTO_UPDATE_SKIPS.append((".pre-commit-config.yaml", repo_label(repo), rev))
     changes: list[tuple[str, str, str]] = []
     for line in result.stdout.splitlines():
         match = HOOK_UPDATE_RE.search(line)
-        if match:
-            changes.append(
-                (
-                    repo_label(match["repo"]),
-                    match["old"].rstrip("."),
-                    match["new"].rstrip("."),
-                )
+        if not match or repo_label(match["repo"]) in protected_labels:
+            continue
+        changes.append(
+            (
+                repo_label(match["repo"]),
+                match["old"].rstrip("."),
+                match["new"].rstrip("."),
             )
+        )
     return changes
 
 
@@ -1270,10 +1546,7 @@ def default_ecosystems(args: argparse.Namespace) -> list[str]:
     """Ecosystems implied by CLI flags before any TUI override."""
     if args.only:
         return [args.only]
-    selected = ["python", "actions", "hooks"]
-    if args.update_docker_tags or args.enable_docker_latest_to_sha_updates:
-        selected = ["python", "actions", "docker", "hooks"]
-    return selected
+    return list(ECOSYSTEMS)
 
 
 def _tui_cancelled() -> None:
@@ -1281,24 +1554,22 @@ def _tui_cancelled() -> None:
 
 
 # Focus is a quiet cyan caret; checked state is a green checkbox (not a lit row).
-TUI_STYLE = questionary.Style(
-    [
-        ("qmark", "fg:cyan bold"),
-        ("question", "bold fg:white"),
-        ("answer", "fg:green bold"),
-        ("pointer", "fg:cyan bold"),
-        ("highlighted", "fg:cyan"),
-        ("selected", "fg:green bold"),
-        ("separator", "fg:cyan"),
-        ("instruction", "fg:#6c7086 italic"),
-        ("text", "fg:#cdd6f4"),
-        ("disabled", "fg:#6c7086 italic"),
-        ("default", "fg:#a6adc8"),
-        ("hint", "fg:#6c7086"),
-        ("eco", "fg:cyan bold"),
-        ("opt", "fg:yellow"),
-    ]
-)
+TUI_STYLE_RULES = [
+    ("qmark", "fg:cyan bold"),
+    ("question", "bold fg:white"),
+    ("answer", "fg:green bold"),
+    ("pointer", "fg:cyan bold"),
+    ("highlighted", "fg:cyan"),
+    ("selected", "fg:green bold"),
+    ("separator", "fg:cyan"),
+    ("instruction", "fg:#6c7086 italic"),
+    ("text", "fg:#cdd6f4"),
+    ("disabled", "fg:#6c7086 italic"),
+    ("default", "fg:#a6adc8"),
+    ("hint", "fg:#6c7086"),
+    ("eco", "fg:cyan bold"),
+    ("opt", "fg:yellow"),
+]
 
 ECOSYSTEM_HINTS = {
     "python": "pyproject.toml + uv.lock",
@@ -1308,12 +1579,12 @@ ECOSYSTEM_HINTS = {
 }
 
 
-def _tui_checkbox(message: str, choices: list, **kwargs):
+def _tui_checkbox(questionary, style, message: str, choices: list, **kwargs):
     """Checkbox prompt: ☑/☐ marks selection; pointer shows focus only."""
     return questionary.checkbox(
         message,
         choices=choices,
-        style=TUI_STYLE,
+        style=style,
         qmark="❯",
         pointer="›",
         instruction="  space toggle · a all · enter confirm",
@@ -1321,10 +1592,10 @@ def _tui_checkbox(message: str, choices: list, **kwargs):
     )
 
 
-def _tui_text(message: str, **kwargs):
+def _tui_text(questionary, style, message: str, **kwargs):
     return questionary.text(
         message,
-        style=TUI_STYLE,
+        style=style,
         qmark="❯",
         **kwargs,
     )
@@ -1335,9 +1606,13 @@ def prompt_tui(args: argparse.Namespace) -> argparse.Namespace:
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise SystemExit("--tui requires an interactive terminal")
 
+    import questionary
+    from questionary.prompts import common as qcommon
+
     # questionary defaults to ●/○ (radio look); use real checkboxes instead.
     qcommon.INDICATOR_SELECTED = "☑"
     qcommon.INDICATOR_UNSELECTED = "☐"
+    style = questionary.Style(TUI_STYLE_RULES)
 
     defaults = set(default_ecosystems(args))
     eco_choices = []
@@ -1356,6 +1631,8 @@ def prompt_tui(args: argparse.Namespace) -> argparse.Namespace:
             )
         )
     selected = _tui_checkbox(
+        questionary,
+        style,
         "Ecosystems to update",
         choices=eco_choices,
         validate=lambda picked: (
@@ -1405,7 +1682,7 @@ def prompt_tui(args: argparse.Namespace) -> argparse.Namespace:
                 checked=args.enable_docker_latest_to_sha_updates,
             )
         )
-    options = _tui_checkbox("Options", choices=option_choices).ask()
+    options = _tui_checkbox(questionary, style, "Options", choices=option_choices).ask()
     if options is None:
         _tui_cancelled()
     options_set = set(options)
@@ -1413,6 +1690,8 @@ def prompt_tui(args: argparse.Namespace) -> argparse.Namespace:
     min_age = args.min_age
     if "actions" in selected:
         answer = _tui_text(
+            questionary,
+            style,
             "Actions release min-age (hours)",
             default=str(args.min_age),
             validate=lambda text: True if text.isdigit() else "Enter an integer >= 0",
@@ -1426,7 +1705,6 @@ def prompt_tui(args: argparse.Namespace) -> argparse.Namespace:
     args.allow_major = "no_major" not in options_set
     args.add_python_latest_version = "add_python_latest" in options_set
     args.enable_docker_latest_to_sha_updates = "docker_latest" in options_set
-    args.update_docker_tags = "docker" in selected
     args.min_age = min_age
     args.only = None
     return args
@@ -1463,10 +1741,7 @@ def main() -> None:
     parser.add_argument(
         "--only",
         choices=ECOSYSTEMS,
-        help=(
-            "Update one ecosystem. Default: python, actions, and hooks "
-            "(docker needs --update-docker-tags)."
-        ),
+        help=("Update one ecosystem. Default: python, actions, docker, and hooks."),
     )
     parser.add_argument(
         "--allow-major",
@@ -1488,24 +1763,21 @@ def main() -> None:
         default=DEFAULT_MIN_AGE_HOURS,
         metavar="HOURS",
         help=(
-            "Actions: adopt the newest release at least this many hours old "
+            "Actions and uv_build: adopt the newest release at least this many hours old "
             f"(default: {DEFAULT_MIN_AGE_HOURS}). Use 0 for the absolute latest."
         ),
     )
     parser.add_argument(
         "--update-docker-tags",
         action="store_true",
-        help=(
-            "Include docker image digest updates. Skipped by default "
-            "(unless --only docker)."
-        ),
+        help="Accepted and ignored: docker digest updates run by default.",
     )
     parser.add_argument(
         "--enable-docker-latest-to-sha-updates",
         action="store_true",
         help=(
             "Pin or refresh digests for images tagged latest (including untagged "
-            "FROM lines). Skipped by default. Implies --update-docker-tags."
+            "FROM lines). Skipped by default."
         ),
     )
     parser.add_argument(
@@ -1554,7 +1826,13 @@ def main() -> None:
                 dry_run=args.dry_run,
                 add_latest=args.add_python_latest_version,
             )
-            maintenance = python_maintenance(python_direct)
+            uv_changes, uv_notes = sync_uv_build(
+                dry_run=args.dry_run,
+                add_latest=args.add_python_latest_version,
+                min_age_hours=args.min_age,
+            )
+            changes = changes + uv_changes
+            maintenance = uv_notes + python_maintenance(python_direct)
         print_python(
             python_direct=python_direct,
             python_before=python_before,

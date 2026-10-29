@@ -5,8 +5,8 @@ description = "python tools for my profile"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "boto3>=1.43.118",
-    "botocore[crt]>=1.43.118",
+    "boto3>=1.43.122",
+    "botocore[crt]>=1.43.122",
     "fastmcp>=4.1.4",
     "pygithub>=2.10.0",
     "pyyaml>=6.0.3",
@@ -19,8 +19,8 @@ dependencies = [
 dev = [
     "pre-commit>=4.7.0",
     "pyrefly>=1.4.0",
-    "pytest>=9.1.1",
-    "ruff>=0.17.2",
+    "pytest>=9.2.0",
+    "ruff>=0.17.3",
 ]
 
 [tool.uv]

@@ -105,6 +105,7 @@ covdefaults
 coverallsapp
 cpureq
 cpuused
+cpython
 crds
 creds
 crrs
@@ -146,6 +147,7 @@ elif
 elisp
 endpointslices
 endswith
+ensurepip
 entraid
 envsubst
 ephemeralcontainers
@@ -216,6 +218,7 @@ highmem
 hmac
 home
 hostnames
+htmlcov
 http
 httproute
 httproutes
