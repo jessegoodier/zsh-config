@@ -28,19 +28,21 @@ alias kgep='kubectl get endpointslices'
 alias kgevents="kubectl get events --sort-by='.metadata.creationTimestamp'"
 alias kgeventsw="kubectl get events --sort-by='.metadata.creationTimestamp' -w"
 alias kgnol='kubectl get nodes --show-labels'
+alias kgsts="kubectl get sts"
+alias krrsts='kubectl rollout restart sts'
 export BAT_PAGER='less -R'
 export LESS='-R'
 export PAGER=less
 unalias hin 2>/dev/null
 unalias hun 2>/dev/null
 unalias hup 2>/dev/null
-alias kgsts="kubectl get sts"
-alias krrsts='kubectl rollout restart sts'
 alias md='mkdir -p'
 alias pre-commit-all='pre-commit run --all-files'
 alias sts='aws sts get-caller-identity'
-alias -- -='cd -'
 alias ta='tmux attach'
+alias ti='trivy image'
+alias -- -='cd -'
+alias tii='trivy image --ignore-unfixed'
 alias tkill='tmux kill-server'
 alias tks='tmux kill-session -t'
 alias tl='tmux list-sessions'
