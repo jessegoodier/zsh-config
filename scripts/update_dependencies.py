@@ -1,1 +1,0 @@
-/Users/jesse/git-jesse/update-dependencies/update_dependencies.py
