@@ -1,0 +1,18 @@
+.github/workflows/ci.yml
+  h_cca6aa2712613d 19,30
+pyproject.toml
+  h_cca6aa2712613d 8-9
+uv.lock
+  h_cca6aa2712613d 103,110,112,117,124,126,557,559,561,780,782,784,831,833,835,1133,1138,1140,1154,1156,1158,1454,1463,1465,1509-1593,1621-1622
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "dbddda1d98803edf20b7e831726422ca91dd6c5a",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
