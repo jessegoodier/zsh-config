@@ -14,6 +14,7 @@ export CPPFLAGS="-I/opt/homebrew/opt/llvm/include"
 
 # --- Shell options ---
 setopt AUTO_CD
+setopt INTERACTIVE_COMMENTS  # treat # as comments at the prompt (bash-like)
 alias ...='cd ../..'
 alias ....='cd ../../..'
 
