@@ -1,0 +1,24 @@
+.config/zsh/personal-config.zsh
+  s_7add99927a6e79::t_49bca0b24ab477 17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "93a1e80bf597a3235e57d54066d7377489cc2f91",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_7add99927a6e79": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "efa7d338-071b-42a6-835b-7ae772858e11",
+        "model": "default"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
