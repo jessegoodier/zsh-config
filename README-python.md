@@ -23,5 +23,3 @@ To upgrade a tool, run:
 ```bash
 uv lock --upgrade-package <tool>
 ```
-
-or run the [script](scripts/update_dependencies.py) to update all dependencies.

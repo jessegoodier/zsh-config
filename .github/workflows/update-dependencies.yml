@@ -1,30 +1,50 @@
 name: Update dependencies
 
 on:
-  schedule:
-    - cron: "23 5 * * 1" # every Monday at 5:23 AM
   workflow_dispatch:
+  schedule:
+    - cron: "23 9 * * 1" # every Monday at 9:23 AM
 
 permissions:
   contents: write
   pull-requests: write
+  actions: write
+
+concurrency:
+  group: dependency-updates
+  cancel-in-progress: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
-      - name: Run updater
+      - uses: jessegoodier/update-dependencies@862ee2d6a46b9a3bd2ddb61a6cc3f1797ce4734d # v0.1.2
+        id: update
+        with:
+          plain: "true"
+          min-age: "48"
+          progress: plain
         env:
           GH_TOKEN: ${{ github.token }}
-        run: ./scripts/update_dependencies.py
-      - uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+      - name: Validate updated dependencies
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          uv sync --locked
+          uv run ruff check scripts src
+          uv run ruff format --check scripts src
+          # Exit 5 means nothing was collected. There is no test suite yet.
+          uv run pytest || [ $? -eq 5 ]
+      - name: Create dependency pull request and start CI
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPDATE_REPORT: ${{ steps.update.outputs.report-path }}
+          UPDATE_BRANCH: automation/dependencies-${{ github.run_id }}-${{ github.run_attempt }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: python3 .github/scripts/dependency_pr.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
         with:
-          branch: automation/update-dependencies
-          delete-branch: true
-          commit-message: Update dependencies
-          title: Update dependencies
-          body: |
-            Automated run of `scripts/update_dependencies.py`.
-            Review major bumps and re-run CI before merging.
+          name: dependency-update-report
+          path: ${{ steps.update.outputs.report-path }}

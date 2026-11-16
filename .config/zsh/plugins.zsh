@@ -49,8 +49,8 @@ plugin-path() {
 	return 1
 }
 
-# Install (and build if needed) + activate zsh-patina
-# A fast syntax highlighter written in Rust
+# Clone and build zsh-patina. Activation stays deferred so the daemon
+# is not started on the first prompt.
 load-zsh-patina() {
 	emulate -L zsh
 	local name=zsh-patina
@@ -89,16 +89,6 @@ load-zsh-patina() {
 	if [[ ! -x $ZSH_PATINA_PATH ]]; then
 		print -u2 -P "→ ${(r:29:)name} %F{red}✗ binary not found at $ZSH_PATINA_PATH%f"
 		return 1
-	fi
-
-	# Activate only once (safe to call multiple times)
-	if ! typeset -f _zsh_patina_activate >/dev/null 2>&1; then
-		_zsh_patina_activate() {
-			unfunction _zsh_patina_activate
-			add-zsh-hook -d precmd _zsh_patina_activate
-			eval "$("$ZSH_PATINA_PATH" activate)"
-		}
-		add-zsh-hook precmd _zsh_patina_activate
 	fi
 }
 
@@ -186,10 +176,14 @@ source "$(plugin-path zsh-users zsh-completions)"
 # keybinds.zsh binds Up/Down to these widgets; load before config modules run.
 source "$(plugin-path zsh-users zsh-history-substring-search)"
 
-# One deferred task: avoid five precmd + reset-prompt cycles
+# One deferred task: avoid five precmd + reset-prompt cycles.
+# Patina is built above; activate it here, after the other ZLE plugins.
 zsh-defer -c "
 source \"$(plugin-path aloxaf fzf-tab)\"
 source \"$(plugin-path zsh-users zsh-autosuggestions)\"
 source \"$(plugin-path houssamouhra colored-man-pages)\"
-load-zsh-patina
+eval \"\$(\"$ZSH_PATINA_PATH\" activate)\"
+if (( ! \$+functions[_zsh-patina] )); then
+	eval \"\$(\"$ZSH_PATINA_PATH\" completion)\"
+fi
 "
