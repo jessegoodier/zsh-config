@@ -1,3 +1,5 @@
 [highlighting]
 # Prompt-matched theme: valid commands use ANSI green (same as git branch).
 theme = "file:$XDG_CONFIG_HOME/zsh-patina/theme.toml"
+# AUTO_CD is on. A typed directory should look like a path, not a green command.
+autocd_style = "directory"
