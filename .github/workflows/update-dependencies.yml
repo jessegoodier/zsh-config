@@ -33,7 +33,8 @@ jobs:
           uv sync --locked
           uv run ruff check scripts src
           uv run ruff format --check scripts src
-          uv run pytest
+          # Exit 5 means nothing was collected. There is no test suite yet.
+          uv run pytest || [ $? -eq 5 ]
       - name: Create dependency pull request and start CI
         if: steps.update.outputs.changed == 'true'
         env:

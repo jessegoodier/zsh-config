@@ -33,7 +33,8 @@ jobs:
       - name: Ruff format
         run: uv run --locked ruff format --check scripts src
       - name: Pytest
-        run: uv run --locked pytest
+        # Exit 5 means nothing was collected. There is no test suite yet.
+        run: uv run --locked pytest || [ $? -eq 5 ]
       - name: Shellcheck
         run: shellcheck --severity=warning scripts/*.sh .config/fzf/preview.sh
       - name: Zsh syntax
