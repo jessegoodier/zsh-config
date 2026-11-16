@@ -1,0 +1,27 @@
+.config/zsh/plugins.zsh
+  s_267f4f3c728ab3::t_b3f340ba4f2166 52-53
+  s_267f4f3c728ab3::t_a6daa57f12df9c 179-180,185-188
+.config/zsh-patina/config.toml
+  s_267f4f3c728ab3::t_4eaa8265c9a1de 4-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "da3d1d9de9cab82822de0511947b4144bca2d9de",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_267f4f3c728ab3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "7ccaca25-21ca-427a-b4b0-1b84c35fce55",
+        "model": "grok-4.7"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
