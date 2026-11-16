@@ -1,7 +1,7 @@
 # FZF default options & preview
 # Unified preview: directories -> tree, files -> bat
-FZF_PREVIEW="--preview '$XDG_CONFIG_HOME/fzf/preview.sh {}'"
-export FZF_DEFAULT_OPTS_FILE="$XDG_CONFIG_HOME/fzf/config"
+FZF_PREVIEW="--preview '${XDG_CONFIG_HOME:-$HOME/.config}/fzf/preview.sh {}'"
+export FZF_DEFAULT_OPTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/fzf/config"
 
 # Ctrl+T options: multi-select + open selected files in nvim
 export FZF_CTRL_T_OPTS="$FZF_PREVIEW \

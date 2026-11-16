@@ -1,4 +1,8 @@
 # XDG base directories
+# Default XDG_CONFIG_HOME/ZDOTDIR here too: when ZDOTDIR is already inherited from a
+# parent process, zsh reads $ZDOTDIR/.zshenv and skips ~/.zshenv, leaving these unset.
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+export ZDOTDIR="${ZDOTDIR:-$XDG_CONFIG_HOME/zsh}"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_BIN_HOME="$HOME/.local/bin"
 export XDG_CACHE_HOME="$HOME/.cache"

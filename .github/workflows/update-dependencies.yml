@@ -1,0 +1,49 @@
+name: Update dependencies
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 9 * * 1" # every Monday at 9:23 AM
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: dependency-updates
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: jessegoodier/update-dependencies@862ee2d6a46b9a3bd2ddb61a6cc3f1797ce4734d # v0.1.2
+        id: update
+        with:
+          plain: "true"
+          min-age: "48"
+          progress: plain
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Validate updated dependencies
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          uv sync --locked
+          uv run ruff check scripts src
+          uv run ruff format --check scripts src
+          uv run pytest
+      - name: Create dependency pull request and start CI
+        if: steps.update.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPDATE_REPORT: ${{ steps.update.outputs.report-path }}
+          UPDATE_BRANCH: automation/dependencies-${{ github.run_id }}-${{ github.run_attempt }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: python3 .github/scripts/dependency_pr.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: dependency-update-report
+          path: ${{ steps.update.outputs.report-path }}
