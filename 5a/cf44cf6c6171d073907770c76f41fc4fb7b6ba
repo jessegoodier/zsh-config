@@ -1,0 +1,51 @@
+.github/workflows/update-dependencies.yml
+  s_267f4f3c728ab3::t_3f1f0797378bdf 34-35
+  s_267f4f3c728ab3::t_f659534d8afcb7 31-33
+  s_267f4f3c728ab3::t_8d24fa151d7a1b 36-38
+  h_cca6aa2712613d 1-30,39-49
+.config/zsh/.zshenv
+  s_cc3a00ddc5caf3::t_907fc661d901af 2-5
+.config/zsh/config/fzf.zsh
+  s_cc3a00ddc5caf3::t_2f5b5265b9b67b 3-4
+.github/workflows/ci.yml
+  h_cca6aa2712613d 32,34
+.github/scripts/dependency_pr.py
+  s_ccf203b65f8f54::t_bd2224d72cabe5 1-94
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5acf44cf6c6171d073907770c76f41fc4fb7b6ba",
+  "prompts": {},
+  "humans": {
+    "h_cca6aa2712613d": {
+      "author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  },
+  "sessions": {
+    "s_267f4f3c728ab3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "7ccaca25-21ca-427a-b4b0-1b84c35fce55",
+        "model": "default"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    },
+    "s_cc3a00ddc5caf3": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "002e0c89-0992-4520-8e61-c5165f77dcd9",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    },
+    "s_ccf203b65f8f54": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6e22d77-d8e3-472d-9eb4-5fa960c23587",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "jesse goodier <31039225+jessegoodier@users.noreply.github.com>"
+    }
+  }
+}
