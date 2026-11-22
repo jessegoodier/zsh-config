@@ -28,6 +28,10 @@ PATINA=(michel-kraemer zsh-patina)
 # Repo paths linked into $HOME alongside the Python venv.
 PYTHON_LINKS=(pyproject.toml .envrc src)
 BREW_PATHS=(/opt/homebrew/bin/brew /usr/local/bin/brew "$HOME/.linuxbrew/bin/brew" /home/linuxbrew/.linuxbrew/bin/brew)
+# Installed on Linux by the brew step (formulae and taps only).
+BREWFILE="$REPO_ROOT/backup/Brewfile"
+# macOS-only formulae in the Brewfile; kept out of the Linux install.
+BREWFILE_LINUX_SKIP=(mole pinentry-mac)
 ITERM_DOMAIN=com.googlecode.iterm2
 ITERM_PROFILE="$REPO_ROOT/iterm2/zsh-config.json"
 ITERM_PROFILE_DEST="$HOME/Library/Application Support/iTerm2/DynamicProfiles/zsh-config.json"
@@ -244,6 +248,47 @@ offer_brew_packages() {
 	rehash
 	collect_missing_tools
 	(( $#missing_cmds )) && print -u2 "Still missing after brew: ${(j:, :)missing_cmds}"
+	return 0
+}
+
+# Linux only: install the Brewfile's taps and formulae so the toolchain matches
+# macOS. Casks and vscode/go/uv/npm/krew lines are dropped; most casks are macOS apps.
+offer_brewfile() {
+	[[ $(uname -s) == Linux ]] || return 0
+	if [[ ! -r $BREWFILE ]]; then
+		print -u2 "No Brewfile at $BREWFILE; skipping."
+		return 0
+	fi
+	if ! resolve_brew; then
+		print -u2 "Homebrew is not installed; skipping Brewfile."
+		return 0
+	fi
+
+	local -a lines
+	lines=(${(f)"$(grep -E '^(tap|brew) ' -- "$BREWFILE" || true)"})
+	local name
+	for name in $BREWFILE_LINUX_SKIP; do
+		lines=(${lines:#brew\ \"$name\"*})
+	done
+	local -a formulae=(${(M)lines:#brew\ *})
+	print "Brewfile: $BREWFILE ($#formulae formulae; casks and macOS-only formulae skipped)"
+	confirm brew "Install the Brewfile formulae with Homebrew?" || return 0
+
+	local tmp
+	tmp=$(mktemp "${TMPDIR:-/tmp}/zsh-config-Brewfile.XXXXXX")
+	print -rl -- $lines >"$tmp"
+	# Private taps (e.g. apptio-pne/prism-arke) need a GitHub token for downloads.
+	# Exported in a subshell so the token is not echoed by run_loud.
+	(
+		local token
+		if [[ -z ${HOMEBREW_GITHUB_API_TOKEN:-} ]] && (( $+commands[gh] )) &&
+			token=$(gh auth token 2>/dev/null) && [[ -n $token ]]; then
+			export HOMEBREW_GITHUB_API_TOKEN=$token
+		fi
+		run_loud brew bundle install --file="$tmp" --no-upgrade
+	) || print -u2 "Warning: some Brewfile entries failed to install; continuing."
+	rm -f -- "$tmp"
+	(( DRY_RUN )) || rehash
 	return 0
 }
 
@@ -484,6 +529,7 @@ if [[ ${EUID:-$(id -u)} -eq 0 ]]; then
 fi
 
 should_run brew && offer_brew_packages
+should_run brew && offer_brewfile
 
 print "Repo:  $REPO_ROOT"
 print "Home:  $HOME"

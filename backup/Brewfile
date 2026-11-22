@@ -305,8 +305,6 @@ brew "jessegoodier/kpf/kpf", trusted: true
 brew "jessegoodier/kutils/kgc", trusted: true
 # List Kubernetes PersistentVolumes with PVCs, pods, zones, and sizes
 brew "jessegoodier/kutils/kgpv", trusted: true
-# Load/unload environment variables based on $PWD
-brew "jessegoodier/versions/direnv@2.37.1", trusted: true
 # Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface.
 brew "replicatedhq/replicated/cli", trusted: true
 # Modern Kubernetes visibility — topology, traffic, and Helm management

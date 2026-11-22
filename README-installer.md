@@ -97,6 +97,21 @@ Before linking, the installer checks for `git`, `fzf`, `eza`, `bat`, `fd`, `carg
 
 If `brew` is not on `PATH`, it also looks in `/opt/homebrew/bin`, `/usr/local/bin`, and the Linuxbrew locations. When Homebrew itself is missing, the prompt is to install Homebrew from [brew.sh](https://brew.sh) and then the formulae. `--brew` runs the Homebrew installer with `NONINTERACTIVE=1`.
 
+### Linux: the Brewfile
+
+On Linux (including Omarchy), the Homebrew step then offers to install the taps and formulae from [`backup/Brewfile`](./backup/Brewfile), so the tools and their versions match macOS. It runs `brew bundle install --no-upgrade` on a filtered copy. Casks and `vscode`/`go`/`uv`/`npm`/`krew` lines are left out, and so are the macOS-only formulae listed in `BREWFILE_LINUX_SKIP` near the top of `installer.sh`. If `HOMEBREW_GITHUB_API_TOKEN` is unset and `gh` is logged in, the token comes from `gh auth token`; private taps such as `apptio-pne/prism-arke` need it. A failed entry prints a warning and the installer continues. Re-run `./installer.sh --brew` to retry.
+
+A tap whose repository no longer exists stops `brew bundle` before it installs anything, so remove such lines from the Brewfile.
+
+On Omarchy, mise also provides some of these tools (for example `claude`, `codex`, `gh`, `node`, `uv`). To keep one copy on `PATH`, list them in `disable_tools` in `~/.config/mise/config.toml`:
+
+```toml
+[settings]
+disable_tools = ["claude", "codex", "gh", "node", "uv"]
+```
+
+Homebrew comes before `/usr/bin` on `PATH`, so brew's copies also win over Arch packages that Omarchy installs for its own scripts.
+
 ## Zsh plugins
 
 After linking, the installer clones any missing zsh plugins so the first shell starts without downloading. The list comes from the `plugin-path <owner> <repo>` lines in [`.config/zsh/plugins.zsh`](.config/zsh/plugins.zsh), plus `zsh-patina`, so adding a plugin there is enough. Each one is cloned with `git clone --depth=1` from GitHub into `.config/zsh/plugins/` in this clone (`~/.config/zsh/plugins`), the same place `plugin-path` uses. Clones are gitignored.
