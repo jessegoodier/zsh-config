@@ -31,7 +31,9 @@ BREW_PATHS=(/opt/homebrew/bin/brew /usr/local/bin/brew "$HOME/.linuxbrew/bin/bre
 # Installed on Linux by the brew step (formulae and taps only).
 BREWFILE="$REPO_ROOT/backup/Brewfile"
 # macOS-only formulae in the Brewfile; kept out of the Linux install.
-BREWFILE_LINUX_SKIP=(mole pinentry-mac)
+# colima: Linux runs Docker natively; a colima VM can't read bind mounts owned
+# by other UIDs and silently takes over the docker CLI context.
+BREWFILE_LINUX_SKIP=(mole pinentry-mac colima)
 ITERM_DOMAIN=com.googlecode.iterm2
 ITERM_PROFILE="$REPO_ROOT/iterm2/zsh-config.json"
 ITERM_PROFILE_DEST="$HOME/Library/Application Support/iTerm2/DynamicProfiles/zsh-config.json"
